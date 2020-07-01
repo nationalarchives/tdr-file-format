@@ -10,4 +10,7 @@ object Dependencies {
   lazy val circeGeneric = "io.circe" %% "circe-generic" % "0.13.0"
   lazy val circeParser = "io.circe" %% "circe-parser" % "0.13.0"
   lazy val awsUtils =  "uk.gov.nationalarchives.aws.utils" %% "tdr-aws-utils" % "0.1.3"
+  lazy val authUtils = "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.14"
+  lazy val generatedGraphql =  "uk.gov.nationalarchives" %% "tdr-generated-graphql" % "0.0.54-SNAPSHOT"
+  lazy val graphqlClient = "uk.gov.nationalarchives" %% "tdr-graphql-client" % "0.0.12"
 }
