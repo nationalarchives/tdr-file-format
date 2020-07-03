@@ -22,15 +22,15 @@ class Lambda {
 
   val deleteMessage: String => DeleteMessageResponse = sqsUtils.delete(config.getString("sqs.queue.input"), _)
 
-  def update(event: SQSEvent, context: Context): List[String] = {
+  def process(event: SQSEvent, context: Context): List[String] = {
     val eventsWithErrors: EventsWithErrors = decodeS3EventFromSqs(event)
-    val fileUtils = FileUtils(KeycloakUtils(config.getString("url.auth")), s3)
+    val fileUtils = FileUtils()
     val recordProcessor = RecordProcessor(sqsUtils, fileUtils)
     val processingResult: List[Future[Either[String, String]]] = eventsWithErrors.events
           .flatMap(e => e.event.getRecords.asScala
           .map(r => recordProcessor.processRecord(r, e.receiptHandle)))
 
-    val receiptHandleOrError = Await.result(Future.sequence(processingResult), 10 seconds)
+    val receiptHandleOrError = Await.result(Future.sequence(processingResult), 1000 seconds)
     val (fileFormatFailed: List[String], fileFormatSucceeded: List[String]) = receiptHandleOrError.partitionMap(identity)
     val allErrors = fileFormatFailed ++ eventsWithErrors.errors.map(_.getCause.getMessage)
     if (allErrors.nonEmpty) {

@@ -4,31 +4,38 @@ import java.util.UUID
 
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.S3EventNotificationRecord
 import com.typesafe.config.{Config, ConfigFactory}
+import graphql.codegen.GetOriginalPath.getOriginalPath.{Data, Variables}
 import software.amazon.awssdk.services.sqs.model.SendMessageResponse
 import uk.gov.nationalarchives.aws.utils.SQSUtils
-import uk.gov.nationalarchives.fileformat.SiegfriedRespsonse.Siegfried
+import uk.gov.nationalarchives.fileformat.SiegfriedResponse._
 import io.circe.parser.decode
 import io.circe.generic.auto._
 import io.circe.syntax._
 import graphql.codegen.types.{FFIDMetadataInput, FFIDMetadataInputMatches}
-import scala.sys.process._
+import uk.gov.nationalarchives.aws.utils.Clients.s3
+import uk.gov.nationalarchives.tdr.GraphQLClient
+import uk.gov.nationalarchives.tdr.keycloak.KeycloakUtils
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 class RecordProcessor(sqsUtils: SQSUtils, fileUtils: FileUtils)(implicit val executionContext: ExecutionContext) {
   val config: Config = ConfigFactory.load
   val sendMessage: String => SendMessageResponse = sqsUtils.send(config.getString("sqs.queue.output"), _)
 
-  def processRecord(record: S3EventNotificationRecord, receiptHandle: String) = {
+  def processRecord(record: S3EventNotificationRecord, receiptHandle: String): Future[Either[String, String]] = {
     val efsRootLocation = ConfigFactory.load.getString("efs.root.location")
     val fileId = UUID.fromString(record.getS3.getObject.getKey.split("/").last)
-    fileUtils.getFilePath(fileId).map(_.map(
+    val keycloakUtils = KeycloakUtils(config.getString("url.auth"))
+    val client: GraphQLClient[Data, Variables] = new GraphQLClient[Data, Variables](config.getString("url.api"))
+
+    fileUtils.getFilePath(keycloakUtils, client, fileId).map(_.map(
       originalPath => {
-        val s3Response: Either[String, String] = fileUtils.writeFileFromS3(s"$efsRootLocation/$originalPath", fileId, record)
+        val s3Response: Either[String, String] = fileUtils.writeFileFromS3(s"$efsRootLocation/$originalPath", fileId, record, s3)
 
         s3Response.map(_ => {
-          val output: String = s"$efsRootLocation/sf -json -sig $efsRootLocation/default.sig $efsRootLocation/$originalPath".!!
-          decode[Siegfried](output).left.map(err => err.getCause.getMessage)
+          val siegfriedOutput = fileUtils.output(efsRootLocation, originalPath, config.getString("command"))
+          val decoded = decode[Siegfried](siegfriedOutput)
+          decoded.left.map(err => err.getMessage)
             .map(s => ffidMetadataInput(fileId, originalPath, s))
             .map(s => sendMessage(s.asJson.noSpaces))
             .map(_ => receiptHandle)
@@ -38,11 +45,12 @@ class RecordProcessor(sqsUtils: SQSUtils, fileUtils: FileUtils)(implicit val exe
   }
 
   private def ffidMetadataInput(fileId: UUID, originalPath: String, s: Siegfried) = {
-    val identifier = s.identifiers.filter(p => p.name == "pronom").head
-    val details = identifier.details.split(";")
+    //We only care about pronom results. If there are none then empty string
+    val identifierName = s.identifiers.find(p => p.name == "pronom").map(_.name).getOrElse("")
+    val details = s.identifiers.find(p => p.name == "pronom").map(_.details.split(";")).getOrElse(Array("", ""))
     val extension = originalPath.split("\\.").tail.headOption
     val matches: List[FFIDMetadataInputMatches] = s.files.flatMap(f => f.matches.map(m => FFIDMetadataInputMatches(extension, m.basis, Some(m.id))))
-    FFIDMetadataInput(fileId, "siegfried", s.siegfried, details(0), details(1), identifier.name, matches)
+    FFIDMetadataInput(fileId, "siegfried", s.siegfried, details(0), details(1), identifierName, matches)
   }
 }
 

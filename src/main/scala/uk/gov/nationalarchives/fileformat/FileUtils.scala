@@ -8,19 +8,19 @@ import com.typesafe.config.ConfigFactory
 import graphql.codegen.GetOriginalPath.getOriginalPath.{Data, Variables, document}
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.GetObjectRequest
-import uk.gov.nationalarchives.fileformat.SiegfriedRespsonse.Siegfried
+import uk.gov.nationalarchives.fileformat.SiegfriedResponse._
 import uk.gov.nationalarchives.tdr.error.NotAuthorisedError
 import uk.gov.nationalarchives.tdr.{GraphQLClient, GraphQlResponse}
 import uk.gov.nationalarchives.tdr.keycloak.KeycloakUtils
+import scala.sys.process._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
-class FileUtils(keycloakUtils: KeycloakUtils, s3: S3Client)(implicit val executionContext: ExecutionContext) {
+class FileUtils()(implicit val executionContext: ExecutionContext) {
 
-  def getFilePath(fileId: UUID): Future[Either[String, String]] = {
+  def getFilePath(keycloakUtils: KeycloakUtils, client: GraphQLClient[Data, Variables], fileId: UUID): Future[Either[String, String]] = {
     val config = ConfigFactory.load
-    val client = new GraphQLClient[Data, Variables](config.getString("url.api"))
     val queryResult: Future[Either[String, GraphQlResponse[Data]]] = (for {
       token <- keycloakUtils.serviceAccountToken(config.getString("auth.client.id"), config.getString("auth.client.secret"))
       result <- client.getResult(token, document, Option(Variables(fileId)))
@@ -39,7 +39,7 @@ class FileUtils(keycloakUtils: KeycloakUtils, s3: S3Client)(implicit val executi
     result.map(_.map(_.getClientFileMetadata.originalPath.toRight("No original path")).flatten)
   }
 
-  def writeFileFromS3(path: String, fileId: UUID, record: S3EventNotificationRecord): Either[String, String] = {
+  def writeFileFromS3(path: String, fileId: UUID, record: S3EventNotificationRecord, s3: S3Client): Either[String, String] = {
     val s3Obj = record.getS3
     val key = s3Obj.getObject.getKey
     val request = GetObjectRequest
@@ -52,8 +52,11 @@ class FileUtils(keycloakUtils: KeycloakUtils, s3: S3Client)(implicit val executi
       key
     }.toEither.left.map(_.getMessage)
   }
+
+  def output(efsRootLocation: String, originalPath: String, command: String): String =
+    s"$efsRootLocation/$command -json -sig $efsRootLocation/default.sig $efsRootLocation/$originalPath".!!
 }
 
 object FileUtils {
-  def apply(keycloakUtils: KeycloakUtils, s3Client: S3Client)(implicit executionContext: ExecutionContext): FileUtils = new FileUtils(keycloakUtils, s3Client)(executionContext)
+  def apply()(implicit executionContext: ExecutionContext): FileUtils = new FileUtils()(executionContext)
 }
