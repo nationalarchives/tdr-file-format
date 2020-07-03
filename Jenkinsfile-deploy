@@ -3,5 +3,5 @@
 deployToLambda(
         stage: params.STAGE,
         libraryName: "file-format",
-        version: params.VERSION
+        version: params.TO_DEPLOY
 )
