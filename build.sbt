@@ -39,4 +39,6 @@ assemblyMergeStrategy in assembly := {
   case _ => MergeStrategy.first
 }
 
+assemblyJarName in assembly := "file-format.jar"
+
 // See https://www.scala-sbt.org/1.x/docs/Using-Sonatype.html for instructions on how to publish to Sonatype.
