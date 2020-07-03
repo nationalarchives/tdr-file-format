@@ -1,0 +1,7 @@
+@Library("tdr-jenkinslib@lambda-methods") _
+
+deployToLambda(
+        stage: params.STAGE,
+        libraryName: "file-format",
+        version: params.VERSION
+)
