@@ -1,6 +1,6 @@
 library("tdr-jenkinslib")
 
-
+def repo = "tdr-file-format"
 pipeline {
     agent none
 
@@ -32,7 +32,7 @@ pipeline {
             steps {
                 script {
                     def accountNumber = tdr.getAccountNumberFromStage(params.STAGE)
-                    sh "python3 /run_task.py ${accountNumber} ${params.STAGE} test-file-format-build test-file-format-build"
+                    sh "python3 /run_task.py ${accountNumber} ${params.STAGE} file_format_build_${params.STAGE} file-format-build-${params.STAGE}"
                     tdr.postToDaTdrSlackChannel(colour: "good", message: "*File Format Build* Ran container build task for ${params:STAGE}")
                 }
             }
