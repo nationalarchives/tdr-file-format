@@ -1,0 +1,57 @@
+library("tdr-jenkinslib")
+
+
+pipeline {
+    agent none
+
+    parameters {
+        choice(name: "STAGE", choices: ["intg", "staging", "prod"], description: "The stage you are building the front end for")
+    }
+
+    stages {
+        stage("Push Docker image") {
+            agent {
+                label "master"
+            }
+            steps {
+                script {
+                    docker.withRegistry('', 'docker') {
+                        docker.build("nationalarchives/file-format-build:${params.STAGE}").push()
+                        tdr.postToDaTdrSlackChannel(colour: "good", message: "*File Format Build* :whale: Pushed container for ${params:STAGE} to Docker Hub")
+                    }
+                }
+            }
+        }
+        stage("Run task") {
+            agent {
+                ecs {
+                    inheritFrom "aws"
+                    taskrole "arn:aws:iam::${env.MANAGEMENT_ACCOUNT}:role/TDRJenkinsNodeLambdaRole${params.STAGE.capitalize()}"
+                }
+            }
+            steps {
+                script {
+                    def accountNumber = tdr.getAccountNumberFromStage(params.STAGE)
+                    sh "python3 /run_task.py ${accountNumber} ${params.STAGE} test-file-format-build test-file-format-build"
+                    tdr.postToDaTdrSlackChannel(colour: "good", message: "*File Format Build* Ran container build task for ${params:STAGE}")
+                }
+            }
+        }
+    }
+    post {
+        failure {
+            node('master') {
+                script {
+                    tdr.reportFailedBuildToGitHub(repo)
+                }
+            }
+        }
+        success {
+            node('master') {
+                script {
+                    tdr.reportSuccessfulBuildToGitHub(repo)
+                }
+            }
+        }
+    }
+}
