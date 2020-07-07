@@ -5,7 +5,7 @@ pipeline {
     agent none
 
     parameters {
-        choice(name: "STAGE", choices: ["intg", "staging", "prod"], description: "The stage you are building the front end for")
+        choice(name: "STAGE", choices: ["intg", "staging", "prod"], description: "The stage you are building the file format lambda for")
     }
 
     stages {

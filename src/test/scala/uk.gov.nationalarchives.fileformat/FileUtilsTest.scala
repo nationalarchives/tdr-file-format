@@ -1,6 +1,6 @@
 package uk.gov.nationalarchives.fileformat
 
-import java.nio.file.{Path, Paths}
+import java.nio.file.Path
 import java.util.UUID
 
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.{S3BucketEntity, S3Entity, S3EventNotificationRecord, S3ObjectEntity}
@@ -38,7 +38,7 @@ class FileUtilsTest extends AnyFlatSpec with MockitoSugar with EitherValues with
       .thenReturn(Future.successful(GraphQlResponse(Some(Data(GetClientFileMetadata(Some("originalPath")))), List())))
 
     val fileUtils = FileUtils()
-    fileUtils.getFilePath(keycloakUtils,client, UUID.randomUUID()).futureValue
+    fileUtils.getFilePath(keycloakUtils, client, UUID.randomUUID()).futureValue
 
     val configFactory = ConfigFactory.load
     val expectedId = configFactory.getString("auth.client.id")

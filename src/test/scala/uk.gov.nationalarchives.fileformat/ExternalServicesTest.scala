@@ -1,7 +1,5 @@
 package uk.gov.nationalarchives.fileformat
 
-import java.io.File
-
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.stubbing.StubMapping

@@ -8,7 +8,6 @@ import com.typesafe.config.ConfigFactory
 import graphql.codegen.GetOriginalPath.getOriginalPath.{Data, Variables, document}
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.GetObjectRequest
-import uk.gov.nationalarchives.fileformat.SiegfriedResponse._
 import uk.gov.nationalarchives.tdr.error.NotAuthorisedError
 import uk.gov.nationalarchives.tdr.{GraphQLClient, GraphQlResponse}
 import uk.gov.nationalarchives.tdr.keycloak.KeycloakUtils

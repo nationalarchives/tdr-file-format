@@ -1,4 +1,4 @@
-@Library("tdr-jenkinslib@lambda-methods") _
+library("tdr-jenkinslib")
 
 lambdaTests(
         stage: params.STAGE,

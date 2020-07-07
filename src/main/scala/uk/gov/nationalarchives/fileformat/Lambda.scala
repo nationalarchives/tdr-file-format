@@ -4,10 +4,9 @@ import com.amazonaws.services.lambda.runtime.Context
 import com.amazonaws.services.lambda.runtime.events.SQSEvent
 import com.typesafe.config.{Config, ConfigFactory}
 import software.amazon.awssdk.services.sqs.model.DeleteMessageResponse
-import uk.gov.nationalarchives.aws.utils.Clients.{s3, sqs}
+import uk.gov.nationalarchives.aws.utils.Clients.sqs
 import uk.gov.nationalarchives.aws.utils.S3EventDecoder._
 import uk.gov.nationalarchives.aws.utils.SQSUtils
-import uk.gov.nationalarchives.tdr.keycloak.KeycloakUtils
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._

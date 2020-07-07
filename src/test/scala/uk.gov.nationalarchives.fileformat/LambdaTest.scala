@@ -7,8 +7,6 @@ import io.circe.parser.decode
 import org.scalatest.matchers.should.Matchers.{equal, _}
 import uk.gov.nationalarchives.fileformat.AWSUtils._
 
-import scala.util.Try
-
 class LambdaTest extends ExternalServicesTest {
 
   "The update method" should "put a message in the output queue if the message is successful " in {
