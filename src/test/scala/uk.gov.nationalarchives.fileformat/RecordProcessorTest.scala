@@ -21,7 +21,6 @@ import io.circe.parser.decode
 import io.circe.syntax._
 import org.scalatest.time.{Millis, Seconds, Span}
 import software.amazon.awssdk.services.sqs.model.SendMessageResponse
-
 import scala.concurrent.{ExecutionContext, Future}
 
 class RecordProcessorTest extends AnyFlatSpec with MockitoSugar with EitherValues with ScalaFutures {
