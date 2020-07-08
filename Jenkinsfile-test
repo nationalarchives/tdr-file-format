@@ -1,0 +1,6 @@
+library("tdr-jenkinslib")
+
+lambdaTests(
+        stage: params.STAGE,
+        libraryName: "file-format"
+)
