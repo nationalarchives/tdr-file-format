@@ -1,5 +1,7 @@
 package uk.gov.nationalarchives.fileformat
 
+import java.io.File
+import java.net.URLDecoder
 import java.nio.file.Paths
 import java.util.UUID
 
@@ -11,8 +13,8 @@ import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import uk.gov.nationalarchives.tdr.error.NotAuthorisedError
 import uk.gov.nationalarchives.tdr.{GraphQLClient, GraphQlResponse}
 import uk.gov.nationalarchives.tdr.keycloak.KeycloakUtils
-import scala.sys.process._
 
+import scala.sys.process._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
@@ -44,7 +46,7 @@ class FileUtils()(implicit val executionContext: ExecutionContext) {
     val request = GetObjectRequest
       .builder
       .bucket(s3Obj.getBucket.getName)
-      .key(key)
+      .key(URLDecoder.decode(key, "utf-8"))
       .build
     Try{
       s3.getObject(request, Paths.get(path))
