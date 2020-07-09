@@ -54,8 +54,8 @@ class FileUtils()(implicit val executionContext: ExecutionContext) {
     }.toEither.left.map(_.getMessage)
   }
 
-  def output(efsRootLocation: String, originalPath: String, command: String): String =
-    s"$efsRootLocation/$command -json -sig $efsRootLocation/default.sig $efsRootLocation/$originalPath".!!
+  def output(efsRootLocation: String, consignmentId: UUID, originalPath: String, command: String): String =
+    s"$efsRootLocation/$command -json -sig $efsRootLocation/default.sig $efsRootLocation/$consignmentId/$originalPath".!!
 }
 
 object FileUtils {
