@@ -34,7 +34,7 @@ class RecordProcessor(sqsUtils: SQSUtils, fileUtils: FileUtils)(implicit val exe
     fileUtils.getFilePath(keycloakUtils, client, fileId).map(_.map(
       originalPath => {
         val writeDirectory = originalPath.split("/").init.mkString("/")
-        val mkdir = s"mkdir -p $efsRootLocation/$consignmentId/$writeDirectory".!!
+        s"mkdir -p $efsRootLocation/$consignmentId/$writeDirectory".!!
         val writePath = s"$efsRootLocation/$consignmentId/$originalPath"
         val s3Response: Either[String, String] = fileUtils.writeFileFromS3(writePath, fileId, record, s3)
 
