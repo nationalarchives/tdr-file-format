@@ -64,7 +64,8 @@ class ExternalServicesTest extends AnyFlatSpec with BeforeAndAfterEach with Befo
     wiremockGraphqlServer.resetAll()
     inputQueueHelper.receive.foreach(inputQueueHelper.delete)
     outputQueueHelper.receive.foreach(inputQueueHelper.delete)
-    "rm -f ./src/test/resources/testfiles/originalPath" !
+    "rm -f ./src/test/resources/testfiles/originalPath".!
+    "rm -rf ./src/test/resources/testfiles/f0a73877-6057-4bbb-a1eb-7c7b73cab586".!
 
   }
 }

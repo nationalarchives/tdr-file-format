@@ -1,6 +1,7 @@
 package uk.gov.nationalarchives.fileformat
 
 import java.util.UUID
+import scala.sys.process._
 
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.S3EventNotificationRecord
 import com.typesafe.config.{Config, ConfigFactory}
@@ -24,16 +25,21 @@ class RecordProcessor(sqsUtils: SQSUtils, fileUtils: FileUtils)(implicit val exe
 
   def processRecord(record: S3EventNotificationRecord, receiptHandle: String): Future[Either[String, String]] = {
     val efsRootLocation = ConfigFactory.load.getString("efs.root.location")
-    val fileId = UUID.fromString(record.getS3.getObject.getKey.split("/").last)
+    val s3KeyArr = record.getS3.getObject.getKey.split("/")
+    val fileId = UUID.fromString(s3KeyArr.last)
+    val consignmentId = UUID.fromString(s3KeyArr.init.tail(0))
     val keycloakUtils = KeycloakUtils(config.getString("url.auth"))
     val client: GraphQLClient[Data, Variables] = new GraphQLClient[Data, Variables](config.getString("url.api"))
 
     fileUtils.getFilePath(keycloakUtils, client, fileId).map(_.map(
       originalPath => {
-        val s3Response: Either[String, String] = fileUtils.writeFileFromS3(s"$efsRootLocation/$originalPath", fileId, record, s3)
+        val writeDirectory = originalPath.split("/").init.mkString("/")
+        s"mkdir -p $efsRootLocation/$consignmentId/$writeDirectory".!!
+        val writePath = s"$efsRootLocation/$consignmentId/$originalPath"
+        val s3Response: Either[String, String] = fileUtils.writeFileFromS3(writePath, fileId, record, s3)
 
         s3Response.map(_ => {
-          val siegfriedOutput = fileUtils.output(efsRootLocation, originalPath, config.getString("command"))
+          val siegfriedOutput = fileUtils.output(efsRootLocation, consignmentId, originalPath, config.getString("command"))
           val decoded = decode[Siegfried](siegfriedOutput)
           decoded.left.map(err => err.getMessage)
             .map(s => ffidMetadataInput(fileId, originalPath, s))
