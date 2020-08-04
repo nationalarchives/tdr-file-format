@@ -16,7 +16,9 @@ import org.scalatest.matchers.should.Matchers._
 import sangria.ast.Document
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.{GetObjectRequest, GetObjectResponse}
-import sttp.client.{HttpError, Response}
+import sttp.client.asynchttpclient.WebSocketHandler
+import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
+import sttp.client.{HttpError, HttpURLConnectionBackend, Identity, NothingT, Response, SttpBackend}
 import sttp.model.StatusCode
 import uk.gov.nationalarchives.tdr.GraphQLClient.Extensions
 import uk.gov.nationalarchives.tdr.error.{GraphQlError, HttpException}
@@ -24,17 +26,19 @@ import uk.gov.nationalarchives.tdr.keycloak.KeycloakUtils
 import uk.gov.nationalarchives.tdr.{GraphQLClient, GraphQlResponse}
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.reflect.ClassTag
 
 class FileUtilsTest extends AnyFlatSpec with MockitoSugar with EitherValues with ScalaFutures {
   implicit val ec: ExecutionContext = ExecutionContext.global
+  implicit val backend: SttpBackend[Identity, Nothing, NothingT] = HttpURLConnectionBackend()
 
   "The getFilePath method" should "request a service account token" in {
     val client = mock[GraphQLClient[Data, Variables]]
     val keycloakUtils = mock[KeycloakUtils]
 
-    when(keycloakUtils.serviceAccountToken(any[String], any[String]))
+    when(keycloakUtils.serviceAccountToken[Identity](any[String], any[String])(any[SttpBackend[Identity, Nothing, NothingT]], any[ClassTag[Identity[_]]]))
       .thenReturn(Future.successful(new BearerAccessToken("token")))
-    when(client.getResult(any[BearerAccessToken], any[Document], any[Option[Variables]]))
+    when(client.getResult[Identity](any[BearerAccessToken], any[Document], any[Option[Variables]])(any[SttpBackend[Identity, Nothing, NothingT]], any[ClassTag[Identity[_]]]))
       .thenReturn(Future.successful(GraphQlResponse(Some(Data(GetClientFileMetadata(Some("originalPath")))), List())))
 
     val fileUtils = FileUtils()
@@ -54,9 +58,9 @@ class FileUtilsTest extends AnyFlatSpec with MockitoSugar with EitherValues with
 
     val variables = Variables(uuid)
 
-    when(keycloakUtils.serviceAccountToken(any[String], any[String]))
+    when(keycloakUtils.serviceAccountToken[Identity](any[String], any[String])(any[SttpBackend[Identity, Nothing, NothingT]], any[ClassTag[Identity[_]]]))
       .thenReturn(Future.successful(new BearerAccessToken("token")))
-    when(client.getResult(any[BearerAccessToken], any[Document], any[Option[Variables]]))
+    when(client.getResult[Identity](any[BearerAccessToken], any[Document], any[Option[Variables]])(any[SttpBackend[Identity, Nothing, NothingT]], any[ClassTag[Identity[_]]]))
       .thenReturn(Future.successful(GraphQlResponse(Some(Data(GetClientFileMetadata(Some("originalPath")))), List())))
 
     val fileUtils = FileUtils()
@@ -70,9 +74,9 @@ class FileUtilsTest extends AnyFlatSpec with MockitoSugar with EitherValues with
     val keycloakUtils = mock[KeycloakUtils]
     val uuid = UUID.randomUUID()
 
-    when(keycloakUtils.serviceAccountToken(any[String], any[String]))
+    when(keycloakUtils.serviceAccountToken[Identity](any[String], any[String])(any[SttpBackend[Identity, Nothing, NothingT]], any[ClassTag[Identity[_]]]))
       .thenReturn(Future.successful(new BearerAccessToken("token")))
-    when(client.getResult(any[BearerAccessToken], any[Document], any[Option[Variables]]))
+    when(client.getResult[Identity](any[BearerAccessToken], any[Document], any[Option[Variables]])(any[SttpBackend[Identity, Nothing, NothingT]], any[ClassTag[Identity[_]]]))
       .thenReturn(Future.successful(GraphQlResponse(Some(Data(GetClientFileMetadata(Some("originalPath")))), List())))
 
     val fileUtils = FileUtils()
@@ -85,9 +89,9 @@ class FileUtilsTest extends AnyFlatSpec with MockitoSugar with EitherValues with
     val client = mock[GraphQLClient[Data, Variables]]
     val keycloakUtils = mock[KeycloakUtils]
 
-    when(keycloakUtils.serviceAccountToken(any[String], any[String]))
+    when(keycloakUtils.serviceAccountToken[Identity](any[String], any[String])(any[SttpBackend[Identity, Nothing, NothingT]], any[ClassTag[Identity[_]]]))
       .thenThrow(HttpError("An error occurred contacting the auth server"))
-    when(client.getResult(any[BearerAccessToken], any[Document], any[Option[Variables]]))
+    when(client.getResult[Identity](any[BearerAccessToken], any[Document], any[Option[Variables]])(any[SttpBackend[Identity, Nothing, NothingT]], any[ClassTag[Identity[_]]]))
       .thenReturn(Future.successful(GraphQlResponse(Some(Data(GetClientFileMetadata(Some("originalPath")))), List())))
 
     val exception = intercept[HttpError] {
@@ -105,9 +109,9 @@ class FileUtilsTest extends AnyFlatSpec with MockitoSugar with EitherValues with
 
     val response = Response(body, StatusCode.ServiceUnavailable)
 
-    when(keycloakUtils.serviceAccountToken(any[String], any[String]))
+    when(keycloakUtils.serviceAccountToken[Identity](any[String], any[String])(any[SttpBackend[Identity, Nothing, NothingT]], any[ClassTag[Identity[_]]]))
       .thenReturn(Future.successful(new BearerAccessToken("token")))
-    when(client.getResult(any[BearerAccessToken], any[Document], any[Option[Variables]])).thenThrow(new HttpException(response))
+    when(client.getResult[Identity](any[BearerAccessToken], any[Document], any[Option[Variables]])(any[SttpBackend[Identity, Nothing, NothingT]], any[ClassTag[Identity[_]]])).thenThrow(new HttpException(response))
 
     val res: Either[String, String] = FileUtils().getFilePath(keycloakUtils, client, uuid).futureValue
     res.left.value shouldEqual "Unexpected response from GraphQL API: Response(Left(Graphql error),503,,List(),List())"
@@ -119,12 +123,12 @@ class FileUtilsTest extends AnyFlatSpec with MockitoSugar with EitherValues with
 
     val uuid = UUID.randomUUID()
 
-    when(keycloakUtils.serviceAccountToken(any[String], any[String]))
+    when(keycloakUtils.serviceAccountToken[Identity](any[String], any[String])(any[SttpBackend[Identity, Nothing, NothingT]], any[ClassTag[Identity[_]]]))
       .thenReturn(Future.successful(new BearerAccessToken("token")))
     val graphqlResponse: GraphQlResponse[Data] =
       GraphQlResponse(Option.empty, List(GraphQlError(GraphQLClient.Error("Not authorised message",
         List(), List(), Some(Extensions(Some("NOT_AUTHORISED")))))))
-    when(client.getResult(any[BearerAccessToken], any[Document], any[Option[Variables]]))
+    when(client.getResult[Identity](any[BearerAccessToken], any[Document], any[Option[Variables]])(any[SttpBackend[Identity, Nothing, NothingT]], any[ClassTag[Identity[_]]]))
       .thenReturn(Future.successful(graphqlResponse))
 
     val res = FileUtils().getFilePath(keycloakUtils, client, uuid).futureValue
@@ -136,12 +140,12 @@ class FileUtilsTest extends AnyFlatSpec with MockitoSugar with EitherValues with
     val client = mock[GraphQLClient[Data, Variables]]
     val keycloakUtils = mock[KeycloakUtils]
 
-    when(keycloakUtils.serviceAccountToken(any[String], any[String]))
+    when(keycloakUtils.serviceAccountToken[Identity](any[String], any[String])(any[SttpBackend[Identity, Nothing, NothingT]], any[ClassTag[Identity[_]]]))
       .thenReturn(Future.successful(new BearerAccessToken("token")))
     val graphqlResponse: GraphQlResponse[Data] =
       GraphQlResponse(Option.empty, List(GraphQlError(GraphQLClient.Error("General error",
         List(), List(), Option.empty))))
-    when(client.getResult(any[BearerAccessToken], any[Document], any[Option[Variables]]))
+    when(client.getResult[Identity](any[BearerAccessToken], any[Document], any[Option[Variables]])(any[SttpBackend[Identity, Nothing, NothingT]], any[ClassTag[Identity[_]]]))
       .thenReturn(Future.successful(graphqlResponse))
 
     val res = FileUtils().getFilePath(keycloakUtils, client, UUID.randomUUID()).futureValue
