@@ -10,6 +10,9 @@ import com.typesafe.config.ConfigFactory
 import graphql.codegen.GetOriginalPath.getOriginalPath.{Data, Variables, document}
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.GetObjectRequest
+import sttp.client.{HttpURLConnectionBackend, Identity, NothingT, Response, SttpBackend}
+import sttp.client.asynchttpclient.WebSocketHandler
+import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
 import uk.gov.nationalarchives.tdr.error.NotAuthorisedError
 import uk.gov.nationalarchives.tdr.{GraphQLClient, GraphQlResponse}
 import uk.gov.nationalarchives.tdr.keycloak.KeycloakUtils
@@ -20,7 +23,8 @@ import scala.util.Try
 
 class FileUtils()(implicit val executionContext: ExecutionContext) {
 
-  def getFilePath(keycloakUtils: KeycloakUtils, client: GraphQLClient[Data, Variables], fileId: UUID): Future[Either[String, String]] = {
+  def getFilePath(keycloakUtils: KeycloakUtils, client: GraphQLClient[Data, Variables], fileId: UUID)(implicit backend: SttpBackend[Identity, Nothing, NothingT]): Future[Either[String, String]] = {
+
     val config = ConfigFactory.load
     val queryResult: Future[Either[String, GraphQlResponse[Data]]] = (for {
       token <- keycloakUtils.serviceAccountToken(config.getString("auth.client.id"), config.getString("auth.client.secret"))

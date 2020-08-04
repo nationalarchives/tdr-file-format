@@ -1,8 +1,8 @@
 package uk.gov.nationalarchives.fileformat
 
 import java.util.UUID
-import scala.sys.process._
 
+import scala.sys.process._
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.S3EventNotificationRecord
 import com.typesafe.config.{Config, ConfigFactory}
 import graphql.codegen.GetOriginalPath.getOriginalPath.{Data, Variables}
@@ -13,6 +13,7 @@ import io.circe.parser.decode
 import io.circe.generic.auto._
 import io.circe.syntax._
 import graphql.codegen.types.{FFIDMetadataInput, FFIDMetadataInputMatches}
+import sttp.client.{HttpURLConnectionBackend, Identity, NothingT, SttpBackend}
 import uk.gov.nationalarchives.aws.utils.Clients.s3
 import uk.gov.nationalarchives.tdr.GraphQLClient
 import uk.gov.nationalarchives.tdr.keycloak.KeycloakUtils
@@ -30,7 +31,7 @@ class RecordProcessor(sqsUtils: SQSUtils, fileUtils: FileUtils)(implicit val exe
     val consignmentId = UUID.fromString(s3KeyArr.init.tail(0))
     val keycloakUtils = KeycloakUtils(config.getString("url.auth"))
     val client: GraphQLClient[Data, Variables] = new GraphQLClient[Data, Variables](config.getString("url.api"))
-
+    implicit val backend: SttpBackend[Identity, Nothing, NothingT] = HttpURLConnectionBackend()
     fileUtils.getFilePath(keycloakUtils, client, fileId).map(_.map(
       originalPath => {
         val writeDirectory = originalPath.split("/").init.mkString("/")
