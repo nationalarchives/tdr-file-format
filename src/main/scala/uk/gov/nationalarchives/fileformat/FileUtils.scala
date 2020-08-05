@@ -41,7 +41,12 @@ class FileUtils()(implicit val executionContext: ExecutionContext) {
       }
       case Left(e) => Left(e)
     }
-    result.map(_.map(_.getClientFileMetadata.originalPath.toRight("No original path")).flatten)
+
+    implicit class OptFunctions(opt: Option[String]) {
+      def toRightNotEmpty(leftMsg: String): Either[String, String] = if (opt.isEmpty || opt.getOrElse("").isEmpty) Left(leftMsg) else Right(opt.get)
+    }
+
+    result.map(_.map(_.getClientFileMetadata.originalPath.toRightNotEmpty("The original path is missing or empty")).flatten)
   }
 
   def writeFileFromS3(path: String, fileId: UUID, record: S3EventNotificationRecord, s3: S3Client): Either[String, String] = {
