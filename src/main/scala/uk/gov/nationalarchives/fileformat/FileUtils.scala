@@ -8,6 +8,8 @@ import java.util.UUID
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.S3EventNotificationRecord
 import com.typesafe.config.ConfigFactory
 import graphql.codegen.GetOriginalPath.getOriginalPath.{Data, Variables, document}
+import graphql.codegen.types.{FFIDMetadataInput, FFIDMetadataInputMatches}
+import io.circe
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import sttp.client.{HttpURLConnectionBackend, Identity, NothingT, Response, SttpBackend}
@@ -19,7 +21,9 @@ import uk.gov.nationalarchives.tdr.keycloak.KeycloakUtils
 
 import scala.sys.process._
 import scala.concurrent.{ExecutionContext, Future}
+import scala.io.Source
 import scala.util.Try
+import com.github.tototoshi.csv._
 
 class FileUtils()(implicit val executionContext: ExecutionContext) {
 
@@ -58,8 +62,25 @@ class FileUtils()(implicit val executionContext: ExecutionContext) {
     }.toEither.left.map(_.getMessage)
   }
 
-  def output(efsRootLocation: String, consignmentId: UUID, originalPath: String, command: String): String =
-    s"$efsRootLocation/$command -json -sig $efsRootLocation/default.sig $efsRootLocation/$consignmentId/$originalPath".!!
+  def output(efsRootLocation: String, consignmentId: UUID, originalPath: String, command: String, fileId: UUID): FFIDMetadataInput = {
+    case class DroidOutput(id: String,parentId: String, uri: String, filePath: String, name: String, method: String, status: String, size: String, resultType: String, ext: String, lastModified: String, extensionMismatch: String, hash: String, formatCount: String, puid: String, mimeType: String, formatName: String, formatVersion: String)
+    val droidVersion = s"$efsRootLocation/$command -v".!!.split("\n")(1)
+    val signatureOutput = s"$efsRootLocation/$command -x".!!.split("\n")
+    val containerSignatureVersion = signatureOutput(1).split(" ").last
+    val droidSignatureVersion = signatureOutput(2).split(" ").last
+    s"$efsRootLocation/$command -a  $efsRootLocation/$consignmentId/$originalPath -p result.droid".!
+    s"$efsRootLocation/$command -p result.droid -E result.csv".!
+    val reader = CSVReader.open(new File("result.csv"))
+    def mapToClass(params: List[String]) = DroidOutput.getClass.getMethods.find(x => x.getName == "apply" && x.isBridge).get.invoke(DroidOutput, params map (_.asInstanceOf[AnyRef]): _*).asInstanceOf[DroidOutput]
+    implicit class OptFunction(str: String) {
+      def toOpt: Option[String] = if (str.isEmpty) Option.empty else Some(str)
+    }
+    val matches: List[FFIDMetadataInputMatches] = reader.all.map(mapToClass).filter(o => o.parentId.isEmpty).map(o => FFIDMetadataInputMatches("".toOpt, o.method, o.puid.toOpt))
+
+    FFIDMetadataInput(fileId, "Droid", droidVersion, droidSignatureVersion, containerSignatureVersion, "pronom", matches)
+  }
+
+
 }
 
 object FileUtils {

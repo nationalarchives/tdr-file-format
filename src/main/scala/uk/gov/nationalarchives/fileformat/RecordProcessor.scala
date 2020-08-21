@@ -19,6 +19,7 @@ import uk.gov.nationalarchives.tdr.GraphQLClient
 import uk.gov.nationalarchives.tdr.keycloak.KeycloakUtils
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 class RecordProcessor(sqsUtils: SQSUtils, fileUtils: FileUtils)(implicit val executionContext: ExecutionContext) {
   val config: Config = ConfigFactory.load
@@ -40,10 +41,8 @@ class RecordProcessor(sqsUtils: SQSUtils, fileUtils: FileUtils)(implicit val exe
         val s3Response: Either[String, String] = fileUtils.writeFileFromS3(writePath, fileId, record, s3)
 
         s3Response.map(_ => {
-          val siegfriedOutput = fileUtils.output(efsRootLocation, consignmentId, originalPath, config.getString("command"))
-          val decoded = decode[Siegfried](siegfriedOutput)
-          decoded.left.map(err => err.getMessage)
-            .map(s => ffidMetadataInput(fileId, originalPath, s))
+          val ffidInput = Try(fileUtils.output(efsRootLocation, consignmentId, originalPath, config.getString("command"), fileId)).toEither
+          ffidInput.left.map(err => err.getMessage)
             .map(s => sendMessage(s.asJson.noSpaces))
             .map(_ => receiptHandle)
         }).flatten[String, String]
@@ -51,14 +50,14 @@ class RecordProcessor(sqsUtils: SQSUtils, fileUtils: FileUtils)(implicit val exe
     ).flatten[String, String])
   }
 
-  private def ffidMetadataInput(fileId: UUID, originalPath: String, s: Siegfried) = {
-    //We only care about pronom results. If there are none then empty string
-    val identifierName = s.identifiers.find(p => p.name == "pronom").map(_.name).getOrElse("")
-    val details = s.identifiers.find(p => p.name == "pronom").map(_.details.split(";")).getOrElse(Array("", ""))
-    val extension = originalPath.split("\\.").tail.headOption
-    val matches: List[FFIDMetadataInputMatches] = s.files.flatMap(f => f.matches.map(m => FFIDMetadataInputMatches(extension, m.basis, Some(m.id))))
-    FFIDMetadataInput(fileId, "siegfried", s.siegfried, details(0), details(1), identifierName, matches)
-  }
+//  private def ffidMetadataInput(fileId: UUID, originalPath: String, s: Siegfried) = {
+//    //We only care about pronom results. If there are none then empty string
+//    val identifierName = s.identifiers.find(p => p.name == "pronom").map(_.name).getOrElse("")
+//    val details = s.identifiers.find(p => p.name == "pronom").map(_.details.split(";")).getOrElse(Array("", ""))
+//    val extension = originalPath.split("\\.").tail.headOption
+//    val matches: List[FFIDMetadataInputMatches] = s.files.flatMap(f => f.matches.map(m => FFIDMetadataInputMatches(extension, m.basis, Some(m.id))))
+//    FFIDMetadataInput(fileId, "siegfried", s.siegfried, details(0), details(1), identifierName, matches)
+//  }
 }
 
 object RecordProcessor {
