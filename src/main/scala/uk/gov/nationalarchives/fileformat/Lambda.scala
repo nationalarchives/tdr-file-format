@@ -3,6 +3,7 @@ package uk.gov.nationalarchives.fileformat
 import com.amazonaws.services.lambda.runtime.Context
 import com.amazonaws.services.lambda.runtime.events.SQSEvent
 import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.scalalogging.Logger
 import software.amazon.awssdk.services.sqs.model.DeleteMessageResponse
 import uk.gov.nationalarchives.aws.utils.Clients.sqs
 import uk.gov.nationalarchives.aws.utils.S3EventDecoder._
@@ -19,6 +20,8 @@ class Lambda {
 
   val config: Config = ConfigFactory.load
   val sqsUtils: SQSUtils = SQSUtils(sqs)
+
+  val logger = Logger[Lambda]
 
   val deleteMessage: String => DeleteMessageResponse = sqsUtils.delete(config.getString("sqs.queue.input"), _)
 
@@ -45,13 +48,20 @@ class Lambda {
     val fileFormatError: Seq[Throwable] = receiptHandleOrError.collect{ case Failure(error) => error }
 
     val allErrors: Seq[Throwable] = fileFormatError ++ parsingErrors
-    val errorMessages = allErrors.map(_.getMessage)
+
+    logErrors(allErrors)
 
     if (allErrors.nonEmpty) {
       fileFormatSucceeded.foreach(deleteMessage)
+
+      val errorMessages = allErrors.map(_.getMessage)
       throw new RuntimeException(errorMessages.mkString("\n"))
     } else {
       fileFormatSucceeded.toList
     }
+  }
+
+  private def logErrors(errors: Seq[Throwable]): Unit = {
+    errors.map(error => logger.error("Error processing file", error))
   }
 }

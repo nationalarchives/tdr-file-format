@@ -20,6 +20,7 @@ lazy val root = (project in file("."))
       circeCore,
       circeGeneric,
       circeParser,
+      scalaLogging,
       authUtils,
       awsUtils,
       generatedGraphql,
