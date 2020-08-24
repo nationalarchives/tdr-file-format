@@ -1,6 +1,8 @@
 library("tdr-jenkinslib")
 
 lambdaTests(
-        stage: params.STAGE,
+        // Hard-code stage, since it is arbitrary in the lambdaTests
+        // function, which publishes the code to the management account
+        stage: "intg",
         libraryName: "file-format"
 )
