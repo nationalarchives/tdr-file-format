@@ -4,5 +4,6 @@ lambdaTests(
         // Hard-code stage, since it is arbitrary in the lambdaTests
         // function, which publishes the code to the management account
         stage: "intg",
-        libraryName: "file-format"
+        libraryName: "file-format",
+        deployJobName: "TDR File Format Deploy"
 )
