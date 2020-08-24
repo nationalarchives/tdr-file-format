@@ -49,15 +49,6 @@ class RecordProcessor(sqsUtils: SQSUtils, fileUtils: FileUtils)(implicit val exe
       }
     ).flatten[String, String])
   }
-
-//  private def ffidMetadataInput(fileId: UUID, originalPath: String, s: Siegfried) = {
-//    //We only care about pronom results. If there are none then empty string
-//    val identifierName = s.identifiers.find(p => p.name == "pronom").map(_.name).getOrElse("")
-//    val details = s.identifiers.find(p => p.name == "pronom").map(_.details.split(";")).getOrElse(Array("", ""))
-//    val extension = originalPath.split("\\.").tail.headOption
-//    val matches: List[FFIDMetadataInputMatches] = s.files.flatMap(f => f.matches.map(m => FFIDMetadataInputMatches(extension, m.basis, Some(m.id))))
-//    FFIDMetadataInput(fileId, "siegfried", s.siegfried, details(0), details(1), identifierName, matches)
-//  }
 }
 
 object RecordProcessor {
