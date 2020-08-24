@@ -13,18 +13,20 @@ import io.circe.parser.decode
 import io.circe.generic.auto._
 import io.circe.syntax._
 import graphql.codegen.types.{FFIDMetadataInput, FFIDMetadataInputMatches}
+import io.circe
 import sttp.client.{HttpURLConnectionBackend, Identity, NothingT, SttpBackend}
 import uk.gov.nationalarchives.aws.utils.Clients.s3
 import uk.gov.nationalarchives.tdr.GraphQLClient
 import uk.gov.nationalarchives.tdr.keycloak.KeycloakUtils
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 class RecordProcessor(sqsUtils: SQSUtils, fileUtils: FileUtils)(implicit val executionContext: ExecutionContext) {
   val config: Config = ConfigFactory.load
   val sendMessage: String => SendMessageResponse = sqsUtils.send(config.getString("sqs.queue.output"), _)
 
-  def processRecord(record: S3EventNotificationRecord, receiptHandle: String): Future[Either[String, String]] = {
+  def processRecord(record: S3EventNotificationRecord, receiptHandle: String): Future[String] = {
     val efsRootLocation = ConfigFactory.load.getString("efs.root.location")
     val s3KeyArr = record.getS3.getObject.getKey.split("/")
     val fileId = UUID.fromString(s3KeyArr.last)
@@ -32,23 +34,21 @@ class RecordProcessor(sqsUtils: SQSUtils, fileUtils: FileUtils)(implicit val exe
     val keycloakUtils = KeycloakUtils(config.getString("url.auth"))
     val client: GraphQLClient[Data, Variables] = new GraphQLClient[Data, Variables](config.getString("url.api"))
     implicit val backend: SttpBackend[Identity, Nothing, NothingT] = HttpURLConnectionBackend()
-    fileUtils.getFilePath(keycloakUtils, client, fileId).map(_.map(
-      originalPath => {
-        val writeDirectory = originalPath.split("/").init.mkString("/")
-        s"mkdir -p $efsRootLocation/$consignmentId/$writeDirectory".!!
-        val writePath = s"$efsRootLocation/$consignmentId/$originalPath"
-        val s3Response: Either[String, String] = fileUtils.writeFileFromS3(writePath, fileId, record, s3)
+    fileUtils.getFilePath(keycloakUtils, client, fileId).map(originalPath => {
+      val writeDirectory = originalPath.split("/").init.mkString("/")
+      s"mkdir -p $efsRootLocation/$consignmentId/$writeDirectory".!!
+      val writePath = s"$efsRootLocation/$consignmentId/$originalPath"
+      val s3Response: Try[String] = fileUtils.writeFileFromS3(writePath, fileId, record, s3)
 
-        s3Response.map(_ => {
-          val siegfriedOutput = fileUtils.output(efsRootLocation, consignmentId, originalPath, config.getString("command"))
-          val decoded = decode[Siegfried](siegfriedOutput)
-          decoded.left.map(err => err.getMessage)
-            .map(s => ffidMetadataInput(fileId, originalPath, s))
-            .map(s => sendMessage(s.asJson.noSpaces))
-            .map(_ => receiptHandle)
-        }).flatten[String, String]
-      }
-    ).flatten[String, String])
+      s3Response.flatMap(_ => {
+        val siegfriedOutput = fileUtils.output(efsRootLocation, consignmentId, originalPath, config.getString("command"))
+        val decoded: Either[circe.Error, Siegfried] = decode[Siegfried](siegfriedOutput)
+        decoded.toTry
+          .map(s => ffidMetadataInput(fileId, originalPath, s))
+          .map(s => sendMessage(s.asJson.noSpaces))
+          .map(_ => receiptHandle)
+      }).get
+    })
   }
 
   private def ffidMetadataInput(fileId: UUID, originalPath: String, s: Siegfried) = {

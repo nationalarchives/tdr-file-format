@@ -13,6 +13,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 import scala.jdk.CollectionConverters._
 import scala.language.postfixOps
+import scala.util.{Failure, Success, Try}
 
 class Lambda {
 
@@ -23,20 +24,34 @@ class Lambda {
 
   def process(event: SQSEvent, context: Context): List[String] = {
     val eventsWithErrors: EventsWithErrors = decodeS3EventFromSqs(event)
+
+    val events = eventsWithErrors.events
+    val parsingErrors = eventsWithErrors.errors
+
     val fileUtils = FileUtils()
     val recordProcessor = RecordProcessor(sqsUtils, fileUtils)
-    val processingResult: List[Future[Either[String, String]]] = eventsWithErrors.events
+    val processingResult: Seq[Future[Try[String]]] = events
           .flatMap(e => e.event.getRecords.asScala
-          .map(r => recordProcessor.processRecord(r, e.receiptHandle)))
+          .map(r => {
+            recordProcessor.processRecord(r, e.receiptHandle)
+              // Convert all Futures to Future[Try] so that we capture _all_ the errors
+              .map(Success(_))
+              .recover{ case error => Failure(error) }
+          }))
 
-    val receiptHandleOrError = Await.result(Future.sequence(processingResult), 1000 seconds)
-    val (fileFormatFailed: List[String], fileFormatSucceeded: List[String]) = receiptHandleOrError.partitionMap(identity)
-    val allErrors = fileFormatFailed ++ eventsWithErrors.errors.map(_.getCause.getMessage)
+    val receiptHandleOrError: Seq[Try[String]] = Await.result(Future.sequence(processingResult), 1000 seconds)
+
+    val fileFormatSucceeded: Seq[String] = receiptHandleOrError.collect{ case Success(receiptHandle) => receiptHandle }
+    val fileFormatError: Seq[Throwable] = receiptHandleOrError.collect{ case Failure(error) => error }
+
+    val allErrors: Seq[Throwable] = fileFormatError ++ parsingErrors
+    val errorMessages = allErrors.map(_.getMessage)
+
     if (allErrors.nonEmpty) {
       fileFormatSucceeded.foreach(deleteMessage)
-      throw new RuntimeException(allErrors.mkString("\n"))
+      throw new RuntimeException(errorMessages.mkString("\n"))
     } else {
-      fileFormatSucceeded
+      fileFormatSucceeded.toList
     }
   }
 }

@@ -10,6 +10,7 @@ import graphql.codegen.GetOriginalPath.getOriginalPath.{Data, GetClientFileMetad
 import org.mockito.ArgumentMatchers._
 import org.mockito.{ArgumentCaptor, MockitoSugar}
 import org.scalatest.EitherValues
+import org.scalatest.TryValues._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers._
@@ -78,8 +79,8 @@ class FileUtilsTest extends AnyFlatSpec with MockitoSugar with EitherValues with
       .thenReturn(Future.successful(GraphQlResponse(Some(Data(GetClientFileMetadata(Some("")))), List())))
 
     val fileUtils = FileUtils()
-    val result: Either[String, String] = fileUtils.getFilePath(keycloakUtils, client, uuid).futureValue
-    result.left.value should equal("The original path is missing or empty")
+    val result = fileUtils.getFilePath(keycloakUtils, client, uuid).failed.futureValue
+    result.getMessage should equal(s"The original path for file '$uuid' is missing or empty")
 
   }
 
@@ -94,8 +95,8 @@ class FileUtilsTest extends AnyFlatSpec with MockitoSugar with EitherValues with
       .thenReturn(Future.successful(GraphQlResponse(Some(Data(GetClientFileMetadata(Some("originalPath")))), List())))
 
     val fileUtils = FileUtils()
-    val result: Either[String, String] = fileUtils.getFilePath(keycloakUtils, client, uuid).futureValue
-    result.map(r => r should equal("originalPath"))
+    val result = fileUtils.getFilePath(keycloakUtils, client, uuid).futureValue
+    result should equal("originalPath")
 
   }
 
@@ -127,8 +128,8 @@ class FileUtilsTest extends AnyFlatSpec with MockitoSugar with EitherValues with
       .thenReturn(Future.successful(new BearerAccessToken("token")))
     when(client.getResult[Identity](any[BearerAccessToken], any[Document], any[Option[Variables]])(any[SttpBackend[Identity, Nothing, NothingT]], any[ClassTag[Identity[_]]])).thenThrow(new HttpException(response))
 
-    val res: Either[String, String] = FileUtils().getFilePath(keycloakUtils, client, uuid).futureValue
-    res.left.value shouldEqual "Unexpected response from GraphQL API: Response(Left(Graphql error),503,,List(),List())"
+    val res: Throwable = FileUtils().getFilePath(keycloakUtils, client, uuid).failed.futureValue
+    res.getMessage shouldEqual "Unexpected response from GraphQL API: Response(Left(Graphql error),503,,List(),List())"
   }
 
   "The getFilePath method" should "error if the graphql query returns not authorised errors" in {
@@ -145,9 +146,9 @@ class FileUtilsTest extends AnyFlatSpec with MockitoSugar with EitherValues with
     when(client.getResult[Identity](any[BearerAccessToken], any[Document], any[Option[Variables]])(any[SttpBackend[Identity, Nothing, NothingT]], any[ClassTag[Identity[_]]]))
       .thenReturn(Future.successful(graphqlResponse))
 
-    val res = FileUtils().getFilePath(keycloakUtils, client, uuid).futureValue
+    val res = FileUtils().getFilePath(keycloakUtils, client, uuid).failed.futureValue
 
-    res.left.value shouldEqual "Not authorised message"
+    res.getMessage should include("Not authorised message")
   }
 
   "The getFilePath method" should "error if the graphql query returns a general error" in {
@@ -162,8 +163,8 @@ class FileUtilsTest extends AnyFlatSpec with MockitoSugar with EitherValues with
     when(client.getResult[Identity](any[BearerAccessToken], any[Document], any[Option[Variables]])(any[SttpBackend[Identity, Nothing, NothingT]], any[ClassTag[Identity[_]]]))
       .thenReturn(Future.successful(graphqlResponse))
 
-    val res = FileUtils().getFilePath(keycloakUtils, client, UUID.randomUUID()).futureValue
-    res.left.value shouldEqual "GraphQL response contained errors: General error"
+    val res = FileUtils().getFilePath(keycloakUtils, client, UUID.randomUUID()).failed.futureValue
+    res.getMessage should include("General error")
   }
 
   "The writeFileFromS3 method" should "write the file to the specified path" in {
@@ -194,6 +195,6 @@ class FileUtilsTest extends AnyFlatSpec with MockitoSugar with EitherValues with
     val record = new S3EventNotificationRecord(null, null, null, null, null, null, null, new S3Entity("", bucket, obj, ""), null)
     when(s3Client.getObject(any[GetObjectRequest], any[Path])).thenThrow(new RuntimeException("error"))
     val response = FileUtils().writeFileFromS3(path, fileId, record, s3Client)
-    response.left.value should equal("error")
+    response.failure.exception should have message "error"
   }
 }
