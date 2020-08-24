@@ -16,8 +16,6 @@ import org.scalatest.matchers.should.Matchers._
 import sangria.ast.Document
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.{GetObjectRequest, GetObjectResponse}
-import sttp.client.asynchttpclient.WebSocketHandler
-import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
 import sttp.client.{HttpError, HttpURLConnectionBackend, Identity, NothingT, Response, SttpBackend}
 import sttp.model.StatusCode
 import uk.gov.nationalarchives.tdr.GraphQLClient.Extensions
@@ -90,7 +88,7 @@ class FileUtilsTest extends AnyFlatSpec with MockitoSugar with EitherValues with
     val keycloakUtils = mock[KeycloakUtils]
 
     when(keycloakUtils.serviceAccountToken[Identity](any[String], any[String])(any[SttpBackend[Identity, Nothing, NothingT]], any[ClassTag[Identity[_]]]))
-      .thenThrow(HttpError("An error occurred contacting the auth server"))
+      .thenThrow(HttpError("An error occurred contacting the auth server", StatusCode.InternalServerError))
     when(client.getResult[Identity](any[BearerAccessToken], any[Document], any[Option[Variables]])(any[SttpBackend[Identity, Nothing, NothingT]], any[ClassTag[Identity[_]]]))
       .thenReturn(Future.successful(GraphQlResponse(Some(Data(GetClientFileMetadata(Some("originalPath")))), List())))
 
