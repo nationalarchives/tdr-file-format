@@ -44,8 +44,7 @@ class FileUtils()(implicit val executionContext: ExecutionContext) {
     })
   }
 
-  // TODO: Delete fileId param
-  def writeFileFromS3(path: String, fileId: UUID, record: S3EventNotificationRecord, s3: S3Client): Try[String] = {
+  def writeFileFromS3(path: String, record: S3EventNotificationRecord, s3: S3Client): Try[String] = {
     val s3Obj = record.getS3
     val key = s3Obj.getObject.getKey
     val request = GetObjectRequest

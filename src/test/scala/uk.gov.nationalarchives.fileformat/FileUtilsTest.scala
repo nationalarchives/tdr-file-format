@@ -173,12 +173,11 @@ class FileUtilsTest extends AnyFlatSpec with MockitoSugar with EitherValues with
     val pathCaptor: ArgumentCaptor[Path] = ArgumentCaptor.forClass(classOf[Path])
     val mockResponse = GetObjectResponse.builder.build()
     val path = "path"
-    val fileId = UUID.randomUUID()
     val bucket = new S3BucketEntity("bucket", null, "")
     val obj = new S3ObjectEntity("key", null, null, null, null)
     val record = new S3EventNotificationRecord(null, null, null, null, null, null, null, new S3Entity("", bucket, obj, ""), null)
     when(s3Client.getObject(requestCaptor.capture(), pathCaptor.capture())).thenReturn(mockResponse)
-    FileUtils().writeFileFromS3(path, fileId, record, s3Client)
+    FileUtils().writeFileFromS3(path, record, s3Client)
 
     val requestArg = requestCaptor.getValue
     requestArg.bucket should equal("bucket")
@@ -189,12 +188,11 @@ class FileUtilsTest extends AnyFlatSpec with MockitoSugar with EitherValues with
   "The writeFileFromS3 method" should "return an error if there is an error writing the file" in {
     val s3Client = mock[S3Client]
     val path = "path"
-    val fileId = UUID.randomUUID()
     val bucket = new S3BucketEntity("bucket", null, "")
     val obj = new S3ObjectEntity("key", null, null, null, null)
     val record = new S3EventNotificationRecord(null, null, null, null, null, null, null, new S3Entity("", bucket, obj, ""), null)
     when(s3Client.getObject(any[GetObjectRequest], any[Path])).thenThrow(new RuntimeException("error"))
-    val response = FileUtils().writeFileFromS3(path, fileId, record, s3Client)
+    val response = FileUtils().writeFileFromS3(path, record, s3Client)
     response.failure.exception should have message "error"
   }
 }

@@ -38,7 +38,7 @@ class RecordProcessor(sqsUtils: SQSUtils, fileUtils: FileUtils)(implicit val exe
       val writeDirectory = originalPath.split("/").init.mkString("/")
       s"mkdir -p $efsRootLocation/$consignmentId/$writeDirectory".!!
       val writePath = s"$efsRootLocation/$consignmentId/$originalPath"
-      val s3Response: Try[String] = fileUtils.writeFileFromS3(writePath, fileId, record, s3)
+      val s3Response: Try[String] = fileUtils.writeFileFromS3(writePath, record, s3)
 
       s3Response.flatMap(_ => {
         val siegfriedOutput = fileUtils.output(efsRootLocation, consignmentId, originalPath, config.getString("command"))

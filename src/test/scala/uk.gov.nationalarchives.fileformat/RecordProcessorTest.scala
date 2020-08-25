@@ -5,23 +5,23 @@ import java.util.UUID
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.{S3BucketEntity, S3Entity, S3EventNotificationRecord, S3ObjectEntity}
 import graphql.codegen.GetOriginalPath.getOriginalPath.{Data, Variables}
 import graphql.codegen.types.{FFIDMetadataInput, FFIDMetadataInputMatches}
-import org.mockito.{ArgumentCaptor, MockitoSugar}
+import io.circe.generic.auto._
+import io.circe.parser.decode
+import io.circe.syntax._
 import org.mockito.ArgumentMatchers._
-import org.scalatest.matchers.should.Matchers._
+import org.mockito.{ArgumentCaptor, MockitoSugar}
 import org.scalatest.EitherValues
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers._
+import org.scalatest.time.{Millis, Seconds, Span}
 import software.amazon.awssdk.services.s3.S3Client
+import software.amazon.awssdk.services.sqs.model.SendMessageResponse
+import sttp.client.{HttpURLConnectionBackend, Identity, NothingT, SttpBackend}
 import uk.gov.nationalarchives.aws.utils.SQSUtils
 import uk.gov.nationalarchives.fileformat.SiegfriedResponse.{Files, Identifiers, Matches, Siegfried}
 import uk.gov.nationalarchives.tdr.GraphQLClient
 import uk.gov.nationalarchives.tdr.keycloak.KeycloakUtils
-import io.circe.generic.auto._
-import io.circe.parser.decode
-import io.circe.syntax._
-import org.scalatest.time.{Millis, Seconds, Span}
-import software.amazon.awssdk.services.sqs.model.SendMessageResponse
-import sttp.client.{HttpURLConnectionBackend, Identity, NothingT, SttpBackend}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
@@ -39,7 +39,7 @@ class RecordProcessorTest extends AnyFlatSpec with MockitoSugar with EitherValue
     val response: String = siegfriedJson.asJson.noSpaces
     when(fileUtils.getFilePath(any[KeycloakUtils], any[GraphQLClient[Data, Variables]], any[UUID])(any[SttpBackend[Identity, Nothing, NothingT]])).thenReturn(Future("originalPath.txt"))
     when(fileUtils.output(any[String], any[UUID], any[String], any[String])).thenReturn(response)
-    when(fileUtils.writeFileFromS3(any[String], any[UUID], any[S3EventNotificationRecord], any[S3Client])).thenReturn(Success("key"))
+    when(fileUtils.writeFileFromS3(any[String], any[S3EventNotificationRecord], any[S3Client])).thenReturn(Success("key"))
 
     val messageCaptor: ArgumentCaptor[String] = ArgumentCaptor.forClass(classOf[String])
     when(sqsUtils.send(any[String], messageCaptor.capture())).thenReturn(SendMessageResponse.builder.build())
@@ -58,7 +58,7 @@ class RecordProcessorTest extends AnyFlatSpec with MockitoSugar with EitherValue
     val response: String = siegfriedJson.asJson.noSpaces
     when(fileUtils.getFilePath(any[KeycloakUtils], any[GraphQLClient[Data, Variables]], any[UUID])(any[SttpBackend[Identity, Nothing, NothingT]])).thenReturn(Future("originalPath.txt"))
     when(fileUtils.output(any[String], any[UUID], any[String], any[String])).thenReturn(response)
-    when(fileUtils.writeFileFromS3(any[String], any[UUID], any[S3EventNotificationRecord], any[S3Client])).thenReturn(Success("key"))
+    when(fileUtils.writeFileFromS3(any[String], any[S3EventNotificationRecord], any[S3Client])).thenReturn(Success("key"))
 
     when(sqsUtils.send(any[String], any[String])).thenReturn(SendMessageResponse.builder.build())
     val record: S3EventNotificationRecord = s3Record(fileId)
@@ -74,7 +74,7 @@ class RecordProcessorTest extends AnyFlatSpec with MockitoSugar with EitherValue
     val response: String = siegfriedJson.asJson.noSpaces
     when(fileUtils.getFilePath(any[KeycloakUtils], any[GraphQLClient[Data, Variables]], any[UUID])(any[SttpBackend[Identity, Nothing, NothingT]])).thenReturn(Future.failed(new RuntimeException("error")))
     when(fileUtils.output(any[String], any[UUID], any[String], any[String])).thenReturn(response)
-    when(fileUtils.writeFileFromS3(any[String], any[UUID], any[S3EventNotificationRecord], any[S3Client])).thenReturn(Success("key"))
+    when(fileUtils.writeFileFromS3(any[String], any[S3EventNotificationRecord], any[S3Client])).thenReturn(Success("key"))
 
     when(sqsUtils.send(any[String], any[String])).thenReturn(SendMessageResponse.builder.build())
     val record: S3EventNotificationRecord = s3Record(fileId)
@@ -90,7 +90,7 @@ class RecordProcessorTest extends AnyFlatSpec with MockitoSugar with EitherValue
     val response: String = siegfriedJson.asJson.noSpaces
     when(fileUtils.getFilePath(any[KeycloakUtils], any[GraphQLClient[Data, Variables]], any[UUID])(any[SttpBackend[Identity, Nothing, NothingT]])).thenReturn(Future("originalPath.txt"))
     when(fileUtils.output(any[String], any[UUID], any[String], any[String])).thenReturn(response)
-    when(fileUtils.writeFileFromS3(any[String], any[UUID], any[S3EventNotificationRecord], any[S3Client])).thenReturn(Failure(new RuntimeException("error")))
+    when(fileUtils.writeFileFromS3(any[String], any[S3EventNotificationRecord], any[S3Client])).thenReturn(Failure(new RuntimeException("error")))
 
     when(sqsUtils.send(any[String], any[String])).thenReturn(SendMessageResponse.builder.build())
     val record: S3EventNotificationRecord = s3Record(fileId)
@@ -106,7 +106,7 @@ class RecordProcessorTest extends AnyFlatSpec with MockitoSugar with EitherValue
 
     when(fileUtils.getFilePath(any[KeycloakUtils], any[GraphQLClient[Data, Variables]], any[UUID])(any[SttpBackend[Identity, Nothing, NothingT]])).thenReturn(Future("originalPath.txt"))
     when(fileUtils.output(any[String], any[UUID], any[String], any[String])).thenReturn("invalidjson")
-    when(fileUtils.writeFileFromS3(any[String], any[UUID], any[S3EventNotificationRecord], any[S3Client])).thenReturn(Success("key"))
+    when(fileUtils.writeFileFromS3(any[String], any[S3EventNotificationRecord], any[S3Client])).thenReturn(Success("key"))
 
     when(sqsUtils.send(any[String], any[String])).thenReturn(SendMessageResponse.builder.build())
     val record: S3EventNotificationRecord = s3Record(fileId)
@@ -122,7 +122,7 @@ class RecordProcessorTest extends AnyFlatSpec with MockitoSugar with EitherValue
     val response: String = siegfriedJson.asJson.noSpaces
     when(fileUtils.getFilePath(any[KeycloakUtils], any[GraphQLClient[Data, Variables]], any[UUID])(any[SttpBackend[Identity, Nothing, NothingT]])).thenReturn(Future("originalPath.txt"))
     when(fileUtils.output(any[String], any[UUID], any[String], any[String])).thenReturn(response)
-    when(fileUtils.writeFileFromS3(any[String], any[UUID], any[S3EventNotificationRecord], any[S3Client])).thenReturn(Success("key"))
+    when(fileUtils.writeFileFromS3(any[String], any[S3EventNotificationRecord], any[S3Client])).thenReturn(Success("key"))
 
     val messageCaptor: ArgumentCaptor[String] = ArgumentCaptor.forClass(classOf[String])
     when(sqsUtils.send(any[String], messageCaptor.capture())).thenReturn(SendMessageResponse.builder.build())
@@ -141,7 +141,7 @@ class RecordProcessorTest extends AnyFlatSpec with MockitoSugar with EitherValue
     val response: String = siegfriedJson.asJson.noSpaces
     when(fileUtils.getFilePath(any[KeycloakUtils], any[GraphQLClient[Data, Variables]], any[UUID])(any[SttpBackend[Identity, Nothing, NothingT]])).thenReturn(Future("originalPath"))
     when(fileUtils.output(any[String], any[UUID], any[String], any[String])).thenReturn(response)
-    when(fileUtils.writeFileFromS3(any[String], any[UUID], any[S3EventNotificationRecord], any[S3Client])).thenReturn(Success("key"))
+    when(fileUtils.writeFileFromS3(any[String], any[S3EventNotificationRecord], any[S3Client])).thenReturn(Success("key"))
 
     val messageCaptor: ArgumentCaptor[String] = ArgumentCaptor.forClass(classOf[String])
     when(sqsUtils.send(any[String], messageCaptor.capture())).thenReturn(SendMessageResponse.builder.build())
@@ -160,7 +160,7 @@ class RecordProcessorTest extends AnyFlatSpec with MockitoSugar with EitherValue
     val response: String = siegfriedJson.asJson.noSpaces
     when(fileUtils.getFilePath(any[KeycloakUtils], any[GraphQLClient[Data, Variables]], any[UUID])(any[SttpBackend[Identity, Nothing, NothingT]])).thenReturn(Future("originalPath"))
     when(fileUtils.output(any[String], any[UUID], any[String], any[String])).thenReturn(response)
-    when(fileUtils.writeFileFromS3(any[String], any[UUID], any[S3EventNotificationRecord], any[S3Client])).thenReturn(Success("key"))
+    when(fileUtils.writeFileFromS3(any[String], any[S3EventNotificationRecord], any[S3Client])).thenReturn(Success("key"))
 
     val messageCaptor: ArgumentCaptor[String] = ArgumentCaptor.forClass(classOf[String])
     when(sqsUtils.send(any[String], messageCaptor.capture())).thenReturn(SendMessageResponse.builder.build())
@@ -184,7 +184,7 @@ class RecordProcessorTest extends AnyFlatSpec with MockitoSugar with EitherValue
 
     when(fileUtils.getFilePath(any[KeycloakUtils], any[GraphQLClient[Data, Variables]], any[UUID])(any[SttpBackend[Identity, Nothing, NothingT]])).thenReturn(Future("originalPath"))
     when(fileUtils.output(any[String], any[UUID], any[String], any[String])).thenReturn(response)
-    when(fileUtils.writeFileFromS3(any[String], any[UUID], any[S3EventNotificationRecord], any[S3Client])).thenReturn(Success("key"))
+    when(fileUtils.writeFileFromS3(any[String], any[S3EventNotificationRecord], any[S3Client])).thenReturn(Success("key"))
 
     val messageCaptor: ArgumentCaptor[String] = ArgumentCaptor.forClass(classOf[String])
     when(sqsUtils.send(any[String], messageCaptor.capture())).thenReturn(SendMessageResponse.builder.build())
