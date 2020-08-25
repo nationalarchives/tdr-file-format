@@ -67,6 +67,22 @@ class FileUtilsTest extends AnyFlatSpec with MockitoSugar with EitherValues with
     verify(client).getResult(new BearerAccessToken("token"), document, Some(variables))
   }
 
+  "The getFilePath method" should "return an error if the original file path is empty" in {
+    val client = mock[GraphQLClient[Data, Variables]]
+    val keycloakUtils = mock[KeycloakUtils]
+    val uuid = UUID.randomUUID()
+
+    when(keycloakUtils.serviceAccountToken[Identity](any[String], any[String])(any[SttpBackend[Identity, Nothing, NothingT]], any[ClassTag[Identity[_]]]))
+      .thenReturn(Future.successful(new BearerAccessToken("token")))
+    when(client.getResult[Identity](any[BearerAccessToken], any[Document], any[Option[Variables]])(any[SttpBackend[Identity, Nothing, NothingT]], any[ClassTag[Identity[_]]]))
+      .thenReturn(Future.successful(GraphQlResponse(Some(Data(GetClientFileMetadata(Some("")))), List())))
+
+    val fileUtils = FileUtils()
+    val result: Either[String, String] = fileUtils.getFilePath(keycloakUtils, client, uuid).futureValue
+    result.left.value should equal("The original path is missing or empty")
+
+  }
+
   "The getFilePath method" should "return the original file path" in {
     val client = mock[GraphQLClient[Data, Variables]]
     val keycloakUtils = mock[KeycloakUtils]
