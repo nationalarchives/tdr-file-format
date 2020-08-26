@@ -20,6 +20,7 @@ import uk.gov.nationalarchives.tdr.keycloak.KeycloakUtils
 import scala.sys.process._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
+import ExceptionUtils._
 
 class FileUtils()(implicit val executionContext: ExecutionContext) {
 
@@ -30,7 +31,7 @@ class FileUtils()(implicit val executionContext: ExecutionContext) {
       token <- keycloakUtils.serviceAccountToken(config.getString("auth.client.id"), config.getString("auth.client.secret"))
       result <- client.getResult(token, document, Option(Variables(fileId)))
     } yield Right(result)) recover(e => {
-      Left(e.getMessage)
+      Left(e.stackTrace)
     })
 
     val result = queryResult.map {
@@ -60,7 +61,7 @@ class FileUtils()(implicit val executionContext: ExecutionContext) {
     Try{
       s3.getObject(request, Paths.get(path))
       key
-    }.toEither.left.map(_.getMessage)
+    }.toEither.left.map(_.stackTrace)
   }
 
   def output(efsRootLocation: String, consignmentId: UUID, originalPath: String, command: String): String =

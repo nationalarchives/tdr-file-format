@@ -111,7 +111,7 @@ class RecordProcessorTest extends AnyFlatSpec with MockitoSugar with EitherValue
     val record: S3EventNotificationRecord = s3Record(fileId)
     val result: Either[String, String] = RecordProcessor(sqsUtils, fileUtils).processRecord(record, "receiptHandle").futureValue
 
-    result.left.value should equal("expected json value got 'invali...' (line 1, column 1)")
+    result.left.value.contains("expected json value got 'invali...' (line 1, column 1)") should be(true)
   }
 
   "The processRecord method" should "send the correct file extension where one is provided" in {

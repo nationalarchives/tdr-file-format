@@ -50,7 +50,7 @@ class LambdaTest extends ExternalServicesTest {
     val exception = intercept[RuntimeException] {
       new Lambda().process(event, null)
     }
-    exception.getMessage should equal("The resource you requested does not exist (Service: S3, Status Code: 404, Request ID: null, Extended Request ID: null)")
+    exception.getMessage.contains("The resource you requested does not exist (Service: S3, Status Code: 404, Request ID: null, Extended Request ID: null)") should be(true)
   }
 
   "The update method" should "send the correct output to the queue" in {

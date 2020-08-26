@@ -17,6 +17,7 @@ import sttp.client.{HttpURLConnectionBackend, Identity, NothingT, SttpBackend}
 import uk.gov.nationalarchives.aws.utils.Clients.s3
 import uk.gov.nationalarchives.tdr.GraphQLClient
 import uk.gov.nationalarchives.tdr.keycloak.KeycloakUtils
+import ExceptionUtils._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -42,7 +43,7 @@ class RecordProcessor(sqsUtils: SQSUtils, fileUtils: FileUtils)(implicit val exe
         s3Response.map(_ => {
           val siegfriedOutput = fileUtils.output(efsRootLocation, consignmentId, originalPath, config.getString("command"))
           val decoded = decode[Siegfried](siegfriedOutput)
-          decoded.left.map(err => err.getMessage)
+          decoded.left.map(err => err.stackTrace)
             .map(s => ffidMetadataInput(fileId, originalPath, s))
             .map(s => sendMessage(s.asJson.noSpaces))
             .map(_ => receiptHandle)

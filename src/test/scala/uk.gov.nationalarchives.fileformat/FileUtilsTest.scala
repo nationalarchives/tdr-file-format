@@ -128,7 +128,7 @@ class FileUtilsTest extends AnyFlatSpec with MockitoSugar with EitherValues with
     when(client.getResult[Identity](any[BearerAccessToken], any[Document], any[Option[Variables]])(any[SttpBackend[Identity, Nothing, NothingT]], any[ClassTag[Identity[_]]])).thenThrow(new HttpException(response))
 
     val res: Either[String, String] = FileUtils().getFilePath(keycloakUtils, client, uuid).futureValue
-    res.left.value shouldEqual "Unexpected response from GraphQL API: Response(Left(Graphql error),503,,List(),List())"
+    res.left.value.contains("Unexpected response from GraphQL API: Response(Left(Graphql error),503,,List(),List())") should be(true)
   }
 
   "The getFilePath method" should "error if the graphql query returns not authorised errors" in {
@@ -194,6 +194,6 @@ class FileUtilsTest extends AnyFlatSpec with MockitoSugar with EitherValues with
     val record = new S3EventNotificationRecord(null, null, null, null, null, null, null, new S3Entity("", bucket, obj, ""), null)
     when(s3Client.getObject(any[GetObjectRequest], any[Path])).thenThrow(new RuntimeException("error"))
     val response = FileUtils().writeFileFromS3(path, fileId, record, s3Client)
-    response.left.value should equal("error")
+    response.left.value.contains("error") should be(true)
   }
 }
