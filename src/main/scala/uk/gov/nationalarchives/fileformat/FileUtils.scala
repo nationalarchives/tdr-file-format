@@ -23,7 +23,6 @@ import scala.sys.process._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.io.Source
 import scala.util.Try
-import ExceptionUtils._
 import com.github.tototoshi.csv._
 
 class FileUtils()(implicit val executionContext: ExecutionContext) {
@@ -80,7 +79,7 @@ class FileUtils()(implicit val executionContext: ExecutionContext) {
     }
     val readerResult: List[List[String]] = reader.all.tail
     val filteredResult = readerResult.filter(o => o.length > 1 && o(1).isEmpty)
-    val matches: List[FFIDMetadataInputMatches] = filteredResult.map(o => FFIDMetadataInputMatches("".toOpt, o(5), o(14).toOpt))
+    val matches: List[FFIDMetadataInputMatches] = filteredResult.map(o => FFIDMetadataInputMatches(o(9).toOpt, o(5), o(14).toOpt))
 
     FFIDMetadataInput(fileId, "Droid", droidVersion, droidSignatureVersion, containerSignatureVersion, "pronom", matches)
   }

@@ -65,6 +65,7 @@ class ExternalServicesTest extends AnyFlatSpec with BeforeAndAfterEach with Befo
     inputQueueHelper.receive.foreach(inputQueueHelper.delete)
     outputQueueHelper.receive.foreach(inputQueueHelper.delete)
     "rm -f ./src/test/resources/testfiles/originalPath".!
+    "rm -f result.csv".!
     "rm -rf ./src/test/resources/testfiles/f0a73877-6057-4bbb-a1eb-7c7b73cab586".!
 
   }

@@ -22,6 +22,7 @@ import uk.gov.nationalarchives.tdr.GraphQLClient.Extensions
 import uk.gov.nationalarchives.tdr.error.{GraphQlError, HttpException}
 import uk.gov.nationalarchives.tdr.keycloak.KeycloakUtils
 import uk.gov.nationalarchives.tdr.{GraphQLClient, GraphQlResponse}
+import scala.sys.process._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.ClassTag
@@ -195,5 +196,42 @@ class FileUtilsTest extends AnyFlatSpec with MockitoSugar with EitherValues with
     when(s3Client.getObject(any[GetObjectRequest], any[Path])).thenThrow(new RuntimeException("error"))
     val response = FileUtils().writeFileFromS3(path, fileId, record, s3Client)
     response.left.value should equal("error")
+  }
+
+  "The output method" should "return the correct droid and signature version" in {
+    val id = UUID.randomUUID()
+    val result = FileUtils().output("./src/test/resources/testfiles", id, "originalPath", "test.sh result_one_record.csv", id)
+    result.map(r => {
+      r.softwareVersion should equal("6.5")
+      r.containerSignatureFileVersion should equal("container-signature-20200121.xml")
+    })
+  }
+
+  "The output method" should "filter out any entries with parent ids" in {
+    val id = UUID.randomUUID()
+    val result = FileUtils().output("./src/test/resources/testfiles", id, "originalPath", "test.sh result_some_parent_ids.csv", id)
+    result.map(_.matches.size should equal(1))
+  }
+
+  "The output method" should "return the correct value if the extension and puid are empty" in {
+    val id = UUID.randomUUID()
+    val result = FileUtils().output("./src/test/resources/testfiles", id, "originalPath", "test.sh result_empty_ext_and_puid.csv", id)
+    result.map(r => {
+      val m = r.matches.head
+      m.extension.isEmpty should be(true)
+      m.puid.isEmpty should be(true)
+    })
+  }
+
+  "The output method" should "return more than one result for multiple result rows" in {
+    val id = UUID.randomUUID()
+    val result = FileUtils().output("./src/test/resources/testfiles", id, "originalPath", "test.sh result_multiple_rows.csv", id)
+    result.map(_.matches.size should equal(3))
+  }
+
+  "The output method" should "return an error if there is an error running the droid commands" in {
+    val id = UUID.randomUUID()
+    val result = FileUtils().output("./src/test/resources/testfiles", id, "originalPath", "invalid_command", id)
+    result.left.value should equal("""Cannot run program "./src/test/resources/testfiles/invalid_command": error=2, No such file or directory""")
   }
 }
