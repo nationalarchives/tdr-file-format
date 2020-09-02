@@ -197,10 +197,4 @@ class RecordProcessorTest extends AnyFlatSpec with MockitoSugar with EitherValue
 
   private def ffidInput = Right(FFIDMetadataInput(UUID.fromString("dd233982-130a-4b71-83ed-44e8c8b1a36c"), "droid", "droidVersion", "identifier1", "identifier2", "pronom", List(FFIDMetadataInputMatches(Some("txt"), "basis", Some("id")))))
   private def ffidInputNoExtension = Right(FFIDMetadataInput(UUID.fromString("dd233982-130a-4b71-83ed-44e8c8b1a36c"), "droid", "droidVersion", "identifier1", "identifier2", "pronom", List(FFIDMetadataInputMatches(Option.empty, "basis", Some("id")))))
-//  private def siegfriedJson = {
-//    val identifiers = Identifiers("pronom", "identifier1;identifier2")
-//    val matches = Matches("ns", "id", "format", "version", "mime", "basis", "warning")
-//    val file = Files("filename", 1.0, "modified", "errors", List(matches))
-//    Siegfried("siegfriedVersion", "date", "signature", "created", List(identifiers), List(file))
-//  }
 }
