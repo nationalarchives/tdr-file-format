@@ -1,31 +1,16 @@
- echo '{
-   "siegfried":"1.8.0",
-   "scandate":"2020-07-01T15:07:36+01:00",
-   "signature":"/home/sam/default.sig",
-   "created":"2020-01-21T23:30:42+01:00",
-   "identifiers":[
-      {
-         "name":"pronom",
-         "details":"DROID_SignatureFile_V96.xml; container-signature-20200121.xml"
-      }
-   ],
-   "files":[
-      {
-         "filename":"/home/sam/original.txt",
-         "filesize":5.0,
-         "modified":"2020-07-01T15:07:36+01:00",
-         "errors":"",
-         "matches":[
-            {
-               "ns":"pronom",
-               "id":"x-fmt/111",
-               "format":"Plain Text File",
-               "version":"",
-               "mime":"text/plain",
-               "basis":"extension match txt; text match ASCII",
-               "warning":""
-            }
-         ]
-      }
-   ]
-   }'
+#!/bin/bash
+if [ "$1" = "-v" ];
+then
+  echo '2020-09-02T12:46:21,181  INFO [main] DroidCommandLine:140 - Starting DROID.
+6.5'
+elif [ "$1" = "-x" ];
+then
+  echo '2020-09-02T12:48:36,263  INFO [main] DroidCommandLine:140 - Starting DROID.
+Type: Container Version:  20200121  File name: container-signature-20200121.xml
+Type: Binary Version:  96  File name: DROID_SignatureFile_V96.xml'
+else
+  echo '"ID","PARENT_ID","URI","FILE_PATH","NAME","METHOD","STATUS","SIZE","TYPE","EXT","LAST_MODIFIED","EXTENSION_MISMATCH","HASH","FORMAT_COUNT","PUID","MIME_TYPE","FORMAT_NAME","FORMAT_VERSION"
+"2","","file:/home/sam/utils/testfiles/hybrid_jpeg_html_file.jpg","/home/sam/utils/testfiles/hybrid_jpeg_html_file.jpg","hybrid_jpeg_html_file.jpg","Signature","Done","60","File","jpg","2020-07-17T16:31:01","true","","2","fmt/96","text/html","Hypertext Markup Language",""
+' > result.csv
+fi
+
