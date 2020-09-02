@@ -22,6 +22,7 @@ lazy val root = (project in file("."))
       circeParser,
       authUtils,
       awsUtils,
+      csvParser,
       generatedGraphql,
       graphqlClient,
       scalaTest % Test,

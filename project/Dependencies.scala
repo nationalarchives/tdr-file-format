@@ -13,6 +13,7 @@ object Dependencies {
   lazy val authUtils = "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.19"
   lazy val generatedGraphql =  "uk.gov.nationalarchives" %% "tdr-generated-graphql" % "0.0.60"
   lazy val graphqlClient = "uk.gov.nationalarchives" %% "tdr-graphql-client" % "0.0.15"
+  lazy val csvParser = "com.github.tototoshi" %% "scala-csv" % "1.3.6"
   lazy val mockito = "org.mockito" %% "mockito-scala" % "1.14.1"
   lazy val sqsMock = "io.findify" %% "sqsmock" % "0.3.4"
   lazy val s3Mock = "io.findify" %% "s3mock" % "0.2.6"
