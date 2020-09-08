@@ -7,19 +7,17 @@ import io.circe.parser.decode
 import org.scalatest.matchers.should.Matchers.{equal, _}
 import uk.gov.nationalarchives.fileformat.AWSUtils._
 
-class LambdaTest extends ExternalServicesTest {
+class LambdaTest extends SqsSpec {
 
   "The update method" should "put a message in the output queue if the message is successful " in {
-    putFile("testfile")
-    new Lambda().process(createEvent("sns_s3_event"), null)
+    new Lambda().process(createEvent("sns_ffid_event"), null)
     val msgs = outputQueueHelper.receive
     msgs.size should equal(1)
   }
 
   "The update method" should "put one message in the output queue, delete the successful message and leave the key error message" in {
-    putFile("testfile")
     intercept[RuntimeException] {
-      new Lambda().process(createEvent("sns_s3_event", "sns_s3_no_key"), null)
+      new Lambda().process(createEvent("sns_ffid_event", "sns_ffid_invalid_consignment_id"), null)
     }
     val outputMessages = outputQueueHelper.receive
     val inputMessages = inputQueueHelper.receive
@@ -30,7 +28,7 @@ class LambdaTest extends ExternalServicesTest {
 
   "The update method" should "leave the queues unchanged if there are no successful messages" in {
     intercept[RuntimeException] {
-      new Lambda().process(createEvent("sns_s3_no_key"), null)
+      new Lambda().process(createEvent("sns_ffid_invalid_consignment_id"), null)
     }
     val outputMessages = outputQueueHelper.receive
     val inputMessages = inputQueueHelper.receive
@@ -39,23 +37,21 @@ class LambdaTest extends ExternalServicesTest {
   }
 
   "The update method" should "return the receipt handle for a successful message" in {
-    putFile("testfile")
-    val event = createEvent("sns_s3_event")
+    val event = createEvent("sns_ffid_event")
     val response = new Lambda().process(event, null)
     response(0) should equal(receiptHandle(event.getRecords.get(0).getBody))
   }
 
-  "The update method" should "throw an exception for a no key error" in {
-    val event = createEvent("sns_s3_no_key")
+  "The update method" should "throw an exception for an invalid consignment id error" in {
+    val event = createEvent("sns_ffid_invalid_consignment_id")
     val exception = intercept[RuntimeException] {
       new Lambda().process(event, null)
     }
-    exception.getMessage should equal("The resource you requested does not exist (Service: S3, Status Code: 404, Request ID: null, Extended Request ID: null)")
+    exception.getMessage should equal("UUID: DownField(consignmentId)")
   }
 
   "The update method" should "send the correct output to the queue" in {
-    putFile("testfile")
-    new Lambda().process(createEvent("sns_s3_event"), null)
+    new Lambda().process(createEvent("sns_ffid_event"), null)
     val msgs = outputQueueHelper.receive
     val metadata: FFIDMetadataInput = decode[FFIDMetadataInput](msgs(0).body) match {
       case Right(metadata) => metadata
