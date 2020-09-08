@@ -16,5 +16,4 @@ object Dependencies {
   lazy val csvParser = "com.github.tototoshi" %% "scala-csv" % "1.3.6"
   lazy val mockito = "org.mockito" %% "mockito-scala" % "1.14.1"
   lazy val sqsMock = "io.findify" %% "sqsmock" % "0.3.4"
-  lazy val s3Mock = "io.findify" %% "s3mock" % "0.2.6"
 }

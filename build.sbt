@@ -27,13 +27,13 @@ lazy val root = (project in file("."))
       graphqlClient,
       scalaTest % Test,
       mockito % Test,
-      sqsMock % Test,
-      s3Mock % Test
+      sqsMock % Test
     )
   )
 
 fork in Test := true
 javaOptions in Test += s"-Dconfig.file=${sourceDirectory.value}/test/resources/application.conf"
+envVars in Test := Map("AWS_ACCESS_KEY_ID" -> "accesskey", "AWS_SECRET_ACCESS_KEY" -> "secret")
 
 assemblyMergeStrategy in assembly := {
   case PathList("META-INF", xs@_*) => MergeStrategy.discard
@@ -41,5 +41,7 @@ assemblyMergeStrategy in assembly := {
 }
 
 assemblyJarName in assembly := "file-format.jar"
+
+
 
 // See https://www.scala-sbt.org/1.x/docs/Using-Sonatype.html for instructions on how to publish to Sonatype.
