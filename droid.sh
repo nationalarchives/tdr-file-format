@@ -1,2 +1,2 @@
 #!/bin/sh
-jre/bin/java -Xmx512m -DdroidTempDir=/mnt/fileformat -DdroidLogDir=/mnt/fileformat -jar "/mnt/fileformat/droid-command-line-6.5.jar" "$@"
+java -Xmx512m -DdroidTempDir=/mnt/fileformat -DdroidLogDir=/mnt/fileformat -jar "/mnt/fileformat/droid-command-line-6.5.jar" "$@"
