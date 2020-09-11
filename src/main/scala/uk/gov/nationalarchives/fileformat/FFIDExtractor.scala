@@ -32,7 +32,12 @@ class FFIDExtractor(sqsUtils: SQSUtils, config: Config) {
         def toOpt: Option[String] = if (str.isEmpty) Option.empty else Some(str)
       }
       val matches: List[FFIDMetadataInputMatches] = reader.all.tail.filter(o => o.length > 1 && o(1).isEmpty)
-        .map(o => FFIDMetadataInputMatches(o(9).toOpt, o(5), o(14).toOpt))
+        .map(o => {
+          val extension = o(9).toOpt
+          val identificationBasis = o(5)
+          val puid = o(14).toOpt
+          FFIDMetadataInputMatches(extension, identificationBasis, puid)
+        })
       val metadataInput = FFIDMetadataInput(file.fileId, "Droid", droidVersion, droidSignatureVersion, containerSignatureVersion, "pronom", matches)
       sendMessage(metadataInput.asJson.noSpaces)
       metadataInput
