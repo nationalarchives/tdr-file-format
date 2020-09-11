@@ -5,10 +5,12 @@ import java.util.UUID
 
 import com.github.tototoshi.csv.CSVReader
 import com.typesafe.config.Config
+import com.typesafe.scalalogging.Logger
 import graphql.codegen.types.{FFIDMetadataInput, FFIDMetadataInputMatches}
 import software.amazon.awssdk.services.sqs.model.SendMessageResponse
 import uk.gov.nationalarchives.aws.utils.SQSUtils
 import uk.gov.nationalarchives.fileformat.FFIDExtractor._
+
 import scala.sys.process._
 import io.circe.syntax._
 
@@ -48,9 +50,10 @@ class FFIDExtractor(sqsUtils: SQSUtils, config: Config) {
 object FFIDExtractor {
   case class FFIDFile(consignmentId: UUID, fileId: UUID, originalPath: String)
 
+  val logger: Logger = Logger[FFIDExtractor]
   implicit class ErrorFunction(err: Throwable) {
     def stackTrace: String = {
-      err.printStackTrace()
+      logger.error("Error processing file", err)
       err.getMessage
     }
   }

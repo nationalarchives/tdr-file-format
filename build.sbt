@@ -25,6 +25,8 @@ lazy val root = (project in file("."))
       csvParser,
       generatedGraphql,
       graphqlClient,
+      scalaLogging,
+      logback,
       scalaTest % Test,
       mockito % Test,
       sqsMock % Test
