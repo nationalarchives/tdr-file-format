@@ -42,6 +42,12 @@ class LambdaTest extends SqsSpec {
     response(0) should equal(receiptHandle(event.getRecords.get(0).getBody))
   }
 
+  "The update method" should "return the receipt handle for a successful message for a file in a nested directory" in {
+    val event = createEvent("sns_ffid_nested_directory_event")
+    val response = new Lambda().process(event, null)
+    response(0) should equal(receiptHandle(event.getRecords.get(0).getBody))
+  }
+
   "The update method" should "throw an exception for an invalid consignment id error" in {
     val event = createEvent("sns_ffid_invalid_consignment_id")
     val exception = intercept[RuntimeException] {
