@@ -27,9 +27,10 @@ class FFIDExtractor(sqsUtils: SQSUtils, config: Config) {
       val signatureOutput = s"$command -x".!!.split("\n")
       val containerSignatureVersion = signatureOutput(1).split(" ").last
       val droidSignatureVersion = signatureOutput(2).split(" ").last
-      s"""$command -a  $efsRootLocation/${file.consignmentId}/${file.originalPath} -p $efsRootLocation/${file.fileId}.droid""".!!
-      s"$command -p $efsRootLocation/${file.fileId}.droid -E $efsRootLocation/${file.fileId}.csv".!!
-      val reader = CSVReader.open(new File(s"$efsRootLocation/${file.fileId}.csv"))
+      val consignmentPath = s"""$efsRootLocation/${file.consignmentId}"""
+      s"""$command -a  $consignmentPath/${file.originalPath} -p $consignmentPath/${file.fileId}.droid""".!!
+      s"$command -p $consignmentPath/${file.fileId}.droid -E $consignmentPath/${file.fileId}.csv".!!
+      val reader = CSVReader.open(new File(s"$consignmentPath/${file.fileId}.csv"))
       implicit class OptFunction(str: String) {
         def toOpt: Option[String] = if (str.isEmpty) Option.empty else Some(str)
       }
