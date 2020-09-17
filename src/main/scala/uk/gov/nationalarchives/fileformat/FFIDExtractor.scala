@@ -43,7 +43,7 @@ class FFIDExtractor(sqsUtils: SQSUtils, config: Config) {
       val metadataInput = FFIDMetadataInput(file.fileId, "Droid", droidVersion, droidSignatureVersion, containerSignatureVersion, "pronom", matches)
       sendMessage(metadataInput.asJson.noSpaces)
       metadataInput
-    }.toEither.left.map(err => err.logAndSummarise)
+    }.toEither.left.map(err => err.logAndSummarise(s"Error processing file id ${file.fileId} with original path ${file.originalPath}"))
   }
 }
 
@@ -52,8 +52,8 @@ object FFIDExtractor {
 
   val logger: Logger = Logger[FFIDExtractor]
   implicit class ErrorFunction(err: Throwable) {
-    def logAndSummarise: String = {
-      logger.error("Error processing file", err)
+    def logAndSummarise(logMessage: String): String = {
+      logger.error(logMessage, err)
       err.getMessage
     }
   }
