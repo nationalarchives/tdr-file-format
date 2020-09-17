@@ -47,7 +47,7 @@ class LambdaTest extends SqsSpec {
     val exception = intercept[RuntimeException] {
       new Lambda().process(event, null)
     }
-    exception.getMessage should equal("UUID: DownField(consignmentId)")
+    exception.getMessage should equal("""Error extracting the file information from the incoming message {"consignmentId":  "1", "fileId":  "acea5919-25a3-4c6b-8908-fa47cc77878f", "originalPath" :  "originalPath"}""")
   }
 
   "The update method" should "send the correct output to the queue" in {

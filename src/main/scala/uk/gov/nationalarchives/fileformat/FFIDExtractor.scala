@@ -19,7 +19,7 @@ import scala.util.Try
 class FFIDExtractor(sqsUtils: SQSUtils, config: Config) {
   val sendMessage: String => SendMessageResponse = sqsUtils.send(config.getString("sqs.queue.output"), _)
 
-  def ffidFile(file: FFIDFile): Either[String, FFIDMetadataInput] = {
+  def ffidFile(file: FFIDFile): Either[ErrorSummary, FFIDMetadataInput] = {
     Try {
       val efsRootLocation = config.getString("efs.root.location")
       val command = s"$efsRootLocation/${config.getString("command")}"
@@ -44,19 +44,17 @@ class FFIDExtractor(sqsUtils: SQSUtils, config: Config) {
       val metadataInput = FFIDMetadataInput(file.fileId, "Droid", droidVersion, droidSignatureVersion, containerSignatureVersion, "pronom", matches)
       sendMessage(metadataInput.asJson.noSpaces)
       metadataInput
-    }.toEither.left.map(err => err.logAndSummarise(s"Error processing file id ${file.fileId} with original path ${file.originalPath}"))
+    }.toEither.left.map(err => err.errorSummary(s"Error processing file id ${file.fileId} with original path ${file.originalPath}"))
   }
 }
 
 object FFIDExtractor {
   case class FFIDFile(consignmentId: UUID, fileId: UUID, originalPath: String)
 
-  val logger: Logger = Logger[FFIDExtractor]
+  case class ErrorSummary(message: String, err: Throwable)
+
   implicit class ErrorFunction(err: Throwable) {
-    def logAndSummarise(logMessage: String): String = {
-      logger.error(logMessage, err)
-      err.getMessage
-    }
+    def errorSummary(logMessage: String): ErrorSummary = ErrorSummary(logMessage, err)
   }
 
   def apply(sqsUtils: SQSUtils, config: Config): FFIDExtractor = new FFIDExtractor(sqsUtils, config)

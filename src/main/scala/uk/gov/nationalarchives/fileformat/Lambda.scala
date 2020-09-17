@@ -4,6 +4,7 @@ import com.amazonaws.services.lambda.runtime.Context
 import com.amazonaws.services.lambda.runtime.events.SQSEvent
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage
 import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.scalalogging.Logger
 import io.circe.Decoder
 import io.circe.generic.auto._
 import io.circe.generic.semiauto.deriveDecoder
@@ -29,16 +30,17 @@ class Lambda {
 
   val downloadOutput: Decoder[FFIDFile] = deriveDecoder[FFIDFile].map[FFIDFile](identity)
 
+  val logger: Logger = Logger[Lambda]
 
   def process(event: SQSEvent, context: Context): List[String] = {
-    def extractFFID(fileWithHandle: FFIDFileWithReceiptHandle): Either[String, String] = {
+    def extractFFID(fileWithHandle: FFIDFileWithReceiptHandle): Either[ErrorSummary, String] = {
       FFIDExtractor(sqsUtils, config).ffidFile(fileWithHandle.ffidFile)
         .map(_ => fileWithHandle.receiptHandle)
     }
 
-    def decodeBody(record: SQSMessage): Either[String, FFIDFileWithReceiptHandle] = {
+    def decodeBody(record: SQSMessage): Either[ErrorSummary, FFIDFileWithReceiptHandle] = {
       decode[FFIDFile](record.getBody)
-        .left.map(_.logAndSummarise(s"Error extracting the file information from the incoming message ${record.getBody}"))
+        .left.map(_.errorSummary(s"Error extracting the file information from the incoming message ${record.getBody}"))
         .map(ffidFile => FFIDFileWithReceiptHandle(ffidFile, record.getReceiptHandle))
     }
 
@@ -48,8 +50,10 @@ class Lambda {
       .partitionMap(identity)
 
     if(errors.nonEmpty) {
+      def logErrorSummary(errorSummary: ErrorSummary): Unit = logger.error(errorSummary.message, errorSummary.err)
       receiptHandles.foreach(deleteMessage)
-      throw new RuntimeException(errors.mkString("\n"))
+      errors.foreach(logErrorSummary)
+      throw new RuntimeException(errors.map(_.message).mkString("\n"))
     } else {
       receiptHandles
     }

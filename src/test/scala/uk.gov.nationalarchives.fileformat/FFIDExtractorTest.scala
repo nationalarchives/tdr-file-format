@@ -41,7 +41,7 @@ class FFIDExtractorTest extends FileSpec {
 
   "The ffid method" should "return an error if there is an error running the droid commands" in {
     val result = FFIDExtractor(sqsUtils, config("invalid_command")).ffidFile(ffidFile)
-    result.left.value should equal("Nonzero exit value: 1")
+    result.left.value.err.getMessage should equal("Nonzero exit value: 1")
   }
 
   def sqsUtils: SQSUtils = mock[SQSUtils]
