@@ -32,25 +32,26 @@ class Lambda {
 
   val logger: Logger = Logger[Lambda]
 
+  def extractFFID(fileWithHandle: FFIDFileWithReceiptHandle): Either[ErrorSummary, String] = {
+    FFIDExtractor(sqsUtils, config).ffidFile(fileWithHandle.ffidFile)
+      .map(_ => fileWithHandle.receiptHandle)
+  }
+
+  def decodeBody(record: SQSMessage): Either[ErrorSummary, FFIDFileWithReceiptHandle] = {
+    decode[FFIDFile](record.getBody)
+      .left.map(_.errorSummary(s"Error extracting the file information from the incoming message ${record.getBody}"))
+      .map(ffidFile => FFIDFileWithReceiptHandle(ffidFile, record.getReceiptHandle))
+  }
+
+  def logErrorSummary(errorSummary: ErrorSummary): Unit = logger.error(errorSummary.message, errorSummary.err)
+
   def process(event: SQSEvent, context: Context): List[String] = {
-    def extractFFID(fileWithHandle: FFIDFileWithReceiptHandle): Either[ErrorSummary, String] = {
-      FFIDExtractor(sqsUtils, config).ffidFile(fileWithHandle.ffidFile)
-        .map(_ => fileWithHandle.receiptHandle)
-    }
-
-    def decodeBody(record: SQSMessage): Either[ErrorSummary, FFIDFileWithReceiptHandle] = {
-      decode[FFIDFile](record.getBody)
-        .left.map(_.errorSummary(s"Error extracting the file information from the incoming message ${record.getBody}"))
-        .map(ffidFile => FFIDFileWithReceiptHandle(ffidFile, record.getReceiptHandle))
-    }
-
     val (errors, receiptHandles) = event.getRecords.asScala.toList
       .map(decodeBody)
       .map(_.map(extractFFID).flatten)
       .partitionMap(identity)
 
     if(errors.nonEmpty) {
-      def logErrorSummary(errorSummary: ErrorSummary): Unit = logger.error(errorSummary.message, errorSummary.err)
       receiptHandles.foreach(deleteMessage)
       errors.foreach(logErrorSummary)
       throw new RuntimeException(errors.map(_.message).mkString("\n"))
