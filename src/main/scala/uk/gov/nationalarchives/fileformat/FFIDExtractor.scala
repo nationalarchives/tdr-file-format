@@ -43,7 +43,7 @@ class FFIDExtractor(sqsUtils: SQSUtils, config: Config) {
       val metadataInput = FFIDMetadataInput(file.fileId, "Droid", droidVersion, droidSignatureVersion, containerSignatureVersion, "pronom", matches)
       sendMessage(metadataInput.asJson.noSpaces)
       metadataInput
-    }.toEither.left.map(err => err.stackTrace)
+    }.toEither.left.map(err => err.logAndSummarise)
   }
 }
 
@@ -52,7 +52,7 @@ object FFIDExtractor {
 
   val logger: Logger = Logger[FFIDExtractor]
   implicit class ErrorFunction(err: Throwable) {
-    def stackTrace: String = {
+    def logAndSummarise: String = {
       logger.error("Error processing file", err)
       err.getMessage
     }

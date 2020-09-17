@@ -38,7 +38,7 @@ class Lambda {
 
     def decodeBody(record: SQSMessage): Either[String, FFIDFileWithReceiptHandle] = {
       decode[FFIDFile](record.getBody)
-        .left.map(_.stackTrace)
+        .left.map(_.logAndSummarise)
         .map(ffidFile => FFIDFileWithReceiptHandle(ffidFile, record.getReceiptHandle))
     }
 
