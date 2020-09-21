@@ -14,6 +14,8 @@ class FFIDExtractorTest extends FileSpec {
 
   "The ffid method" should "return the correct droid and signature version" in {
     val result = FFIDExtractor(sqsUtils, config("result_some_parent_ids")).ffidFile(ffidFile)
+
+    result.isRight should be(true)
     result.map(r => {
       r.softwareVersion should equal("6.5")
       r.containerSignatureFileVersion should equal("container-signature-20200121.xml")
