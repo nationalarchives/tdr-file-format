@@ -15,10 +15,11 @@ pipeline {
       }
       steps {
         script {
-          docker.withRegistry('', 'docker') {
-            docker.build("nationalarchives/file-format-build:${params.STAGE}").push()
-            tdr.postToDaTdrSlackChannel(colour: "good", message: "*File Format Build* :whale: Pushed container for ${params:STAGE} to Docker Hub")
-          }
+          def imageTag = "${env.MANAGEMENT_ACCOUNT}.dkr.ecr.eu-west-2.amazonaws.com/file-format-build:${params.STAGE}"
+          sh "aws ecr get-login --region eu-west-2 --no-include-email | bash"
+          sh "docker build -t ${imageTag} ."
+          sh "docker push ${imageTag}"
+          tdr.postToDaTdrSlackChannel(colour: "good", message: "*File Format Build* :whale: Pushed container for ${params:STAGE} to Docker Hub")
         }
       }
     }
