@@ -16,7 +16,7 @@ pipeline {
       steps {
         script {
           tdr.buildAndPushImage("file-format-build", params.STAGE)
-          tdr.postToDaTdrSlackChannel(colour: "good", message: "*File Format Build* :whale: Pushed container for ${params:STAGE} to Docker Hub")
+          tdr.postToDaTdrSlackChannel(colour: "good", message: "*File Format Build* :whale: Pushed container for ${params:STAGE} to AWS ECR")
         }
       }
     }
