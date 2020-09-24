@@ -15,10 +15,8 @@ pipeline {
       }
       steps {
         script {
-          docker.withRegistry('', 'docker') {
-            docker.build("nationalarchives/file-format-build:${params.STAGE}").push()
-            tdr.postToDaTdrSlackChannel(colour: "good", message: "*File Format Build* :whale: Pushed container for ${params:STAGE} to Docker Hub")
-          }
+          tdr.buildAndPushImage("file-format-build", params.STAGE)
+          tdr.postToDaTdrSlackChannel(colour: "good", message: "*File Format Build* :whale: Pushed container for ${params:STAGE} to AWS ECR")
         }
       }
     }
