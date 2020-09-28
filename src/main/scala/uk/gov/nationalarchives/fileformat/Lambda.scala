@@ -2,41 +2,61 @@ package uk.gov.nationalarchives.fileformat
 
 import com.amazonaws.services.lambda.runtime.Context
 import com.amazonaws.services.lambda.runtime.events.SQSEvent
+import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage
 import com.typesafe.config.{Config, ConfigFactory}
-import software.amazon.awssdk.services.sqs.model.DeleteMessageResponse
+import com.typesafe.scalalogging.Logger
+import io.circe.Decoder
+import io.circe.generic.auto._
+import io.circe.generic.semiauto.deriveDecoder
+import io.circe.parser.decode
+import software.amazon.awssdk.services.sqs.model.{DeleteMessageResponse, SendMessageResponse}
 import uk.gov.nationalarchives.aws.utils.Clients.sqs
-import uk.gov.nationalarchives.aws.utils.S3EventDecoder._
 import uk.gov.nationalarchives.aws.utils.SQSUtils
+import uk.gov.nationalarchives.fileformat.FFIDExtractor.FFIDFile
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
 import scala.jdk.CollectionConverters._
 import scala.language.postfixOps
+import uk.gov.nationalarchives.fileformat.FFIDExtractor._
 
 class Lambda {
+
+  case class FFIDFileWithReceiptHandle(ffidFile: FFIDFile, receiptHandle: String)
 
   val config: Config = ConfigFactory.load
   val sqsUtils: SQSUtils = SQSUtils(sqs)
 
   val deleteMessage: String => DeleteMessageResponse = sqsUtils.delete(config.getString("sqs.queue.input"), _)
+  val sendMessage: String => SendMessageResponse = sqsUtils.send(config.getString("sqs.queue.output"), _)
+
+  val downloadOutput: Decoder[FFIDFile] = deriveDecoder[FFIDFile].map[FFIDFile](identity)
+
+  val logger: Logger = Logger[Lambda]
+
+  def extractFFID(fileWithHandle: FFIDFileWithReceiptHandle): Either[ErrorSummary, String] = {
+    FFIDExtractor(sqsUtils, config).ffidFile(fileWithHandle.ffidFile)
+      .map(_ => fileWithHandle.receiptHandle)
+  }
+
+  def decodeBody(record: SQSMessage): Either[ErrorSummary, FFIDFileWithReceiptHandle] = {
+    decode[FFIDFile](record.getBody)
+      .left.map(_.errorSummary(s"Error extracting the file information from the incoming message ${record.getBody}"))
+      .map(ffidFile => FFIDFileWithReceiptHandle(ffidFile, record.getReceiptHandle))
+  }
+
+  def logErrorSummary(errorSummary: ErrorSummary): Unit = logger.error(errorSummary.message, errorSummary.err)
 
   def process(event: SQSEvent, context: Context): List[String] = {
-    val eventsWithErrors: EventsWithErrors = decodeS3EventFromSqs(event)
-    val fileUtils = FileUtils()
-    val recordProcessor = RecordProcessor(sqsUtils, fileUtils)
-    val processingResult: List[Future[Either[String, String]]] = eventsWithErrors.events
-          .flatMap(e => e.event.getRecords.asScala
-          .map(r => recordProcessor.processRecord(r, e.receiptHandle)))
+    val (errors, receiptHandles) = event.getRecords.asScala.toList
+      .map(decodeBody)
+      .map(_.map(extractFFID).flatten)
+      .partitionMap(identity)
 
-    val receiptHandleOrError = Await.result(Future.sequence(processingResult), 1000 seconds)
-    val (fileFormatFailed: List[String], fileFormatSucceeded: List[String]) = receiptHandleOrError.partitionMap(identity)
-    val allErrors = fileFormatFailed ++ eventsWithErrors.errors.map(_.getCause.getMessage)
-    if (allErrors.nonEmpty) {
-      fileFormatSucceeded.foreach(deleteMessage)
-      throw new RuntimeException(allErrors.mkString("\n"))
+    if(errors.nonEmpty) {
+      receiptHandles.foreach(deleteMessage)
+      errors.foreach(logErrorSummary)
+      throw new RuntimeException(errors.map(_.message).mkString("\n"))
     } else {
-      fileFormatSucceeded
+      receiptHandles
     }
   }
 }

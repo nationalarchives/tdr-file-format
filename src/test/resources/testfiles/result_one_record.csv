@@ -1,0 +1,2 @@
+"ID","PARENT_ID","URI","FILE_PATH","NAME","METHOD","STATUS","SIZE","TYPE","EXT","LAST_MODIFIED","EXTENSION_MISMATCH","HASH","FORMAT_COUNT","PUID","MIME_TYPE","FORMAT_NAME","FORMAT_VERSION"
+"2","","file:/home/user/utils/testfiles/hybrid_jpeg_html_file.jpg","/home/user/utils/testfiles/hybrid_jpeg_html_file.jpg","hybrid_jpeg_html_file.jpg","Signature","Done","60","File","jpg","2020-07-17T16:31:01","true","","2","fmt/96","text/html","Hypertext Markup Language",""

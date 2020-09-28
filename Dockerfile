@@ -1,5 +1,5 @@
-FROM golang:1.14-stretch
-RUN apt-get update && apt-get install git 
-
-RUN go get github.com/richardlehane/siegfried/cmd/sf && /go/bin/sf -update
-CMD cp /root/siegfried/default.sig /tmp/fileformatbuild && cp /go/bin/sf /tmp/fileformatbuild
+FROM alpine
+RUN apk update && apk add git unzip wget
+RUN wget -qq https://github.com/digital-preservation/droid/releases/download/droid-6.5/droid-binary-6.5-bin.zip
+COPY droid.sh /
+CMD unzip -o -d /tmp/fileformatbuild droid-binary-6.5-bin.zip && cp /droid.sh /tmp/fileformatbuild/droid
