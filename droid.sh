@@ -1,3 +1,3 @@
 #!/bin/sh
-java -Xmx512m -DdroidTempDir=/mnt/fileformat -DdroidLogDir=/mnt/fileformat -DdroidUserDir=/mnt/fileformat -jar "/mnt/fileformat/droid-command-line-6.5.jar" "$@"
+java -Xmx512m -DdroidTempDir=/mnt/backend-checks -DdroidLogDir=/mnt/backend-checks -DdroidUserDir=/mnt/backend-checks -jar "/mnt/backend-checks/droid-command-line-6.5.jar" "$@"
 
