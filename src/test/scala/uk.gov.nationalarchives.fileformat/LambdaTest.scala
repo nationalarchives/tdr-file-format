@@ -7,7 +7,7 @@ import io.circe.parser.decode
 import org.scalatest.matchers.should.Matchers.{equal, _}
 import uk.gov.nationalarchives.fileformat.AWSUtils._
 
-class LambdaTest extends SqsSpec {
+class LambdaTest extends SqsSpec with FileSpec {
 
   "The update method" should "put a message in the output queue if the message is successful " in {
     new Lambda().process(createEvent("sns_ffid_event"), null)
@@ -58,6 +58,16 @@ class LambdaTest extends SqsSpec {
 
   "The update method" should "send the correct output to the queue" in {
     new Lambda().process(createEvent("sns_ffid_event"), null)
+    val msgs = outputQueueHelper.receive
+    val metadata: FFIDMetadataInput = decode[FFIDMetadataInput](msgs(0).body) match {
+      case Right(metadata) => metadata
+      case Left(error) => throw error
+    }
+    metadata.fileId should equal(UUID.fromString("acea5919-25a3-4c6b-8908-fa47cc77878f"))
+  }
+
+  "The update method" should "send the correct output if the path has spaces" in {
+    new Lambda().process(createEvent("sns_ffid_path_with_space_event"), null)
     val msgs = outputQueueHelper.receive
     val metadata: FFIDMetadataInput = decode[FFIDMetadataInput](msgs(0).body) match {
       case Right(metadata) => metadata
