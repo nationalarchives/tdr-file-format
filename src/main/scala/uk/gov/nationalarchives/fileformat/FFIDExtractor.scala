@@ -23,12 +23,16 @@ class FFIDExtractor(sqsUtils: SQSUtils, config: Config) {
     Try {
       val efsRootLocation = config.getString("efs.root.location")
       val command = s"$efsRootLocation/${config.getString("command")}"
+      //Outputs droid version to stdout
       val droidVersion = s"$command -v".!!.split("\n")(1)
+      //Outputs signature version to stdout
       val signatureOutput = s"$command -x".!!.split("\n")
       val containerSignatureVersion = signatureOutput(1).split(" ").last
       val droidSignatureVersion = signatureOutput(2).split(" ").last
       val consignmentPath = s"""$efsRootLocation/${file.consignmentId}"""
+      //Adds the file to a profile and runs it. The output is a .droid profile file.
       s"""$command -a  "$consignmentPath/${file.originalPath}" -p $consignmentPath/${file.fileId}.droid""".!!
+      //Exports the profile as a csv
       s"$command -p $consignmentPath/${file.fileId}.droid -E $consignmentPath/${file.fileId}.csv".!!
       val reader = CSVReader.open(new File(s"$consignmentPath/${file.fileId}.csv"))
       implicit class OptFunction(str: String) {
