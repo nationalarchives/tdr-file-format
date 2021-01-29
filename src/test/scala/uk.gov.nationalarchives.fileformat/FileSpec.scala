@@ -13,6 +13,7 @@ trait FileSpec extends AnyFlatSpec with BeforeAndAfterEach  with MockitoSugar wi
   override def beforeEach(): Unit = {
     "mkdir -p ./src/test/resources/testfiles/f0a73877-6057-4bbb-a1eb-7c7b73cab586/rootDirectory/subDirectory".!
     "touch ./src/test/resources/testfiles/f0a73877-6057-4bbb-a1eb-7c7b73cab586/originalPath".!
+    """touch './src/test/resources/testfiles/f0a73877-6057-4bbb-a1eb-7c7b73cab586/originalPath"withQuote'""".!
     """touch "./src/test/resources/testfiles/f0a73877-6057-4bbb-a1eb-7c7b73cab586/path with space" """.!
     "touch ./src/test/resources/testfiles/f0a73877-6057-4bbb-a1eb-7c7b73cab586/rootDirectory/subDirectory/originalPath".!
   }
