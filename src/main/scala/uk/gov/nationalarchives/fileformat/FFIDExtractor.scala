@@ -30,8 +30,14 @@ class FFIDExtractor(sqsUtils: SQSUtils, config: Config) {
       val containerSignatureVersion = signatureOutput(1).split(" ").last
       val droidSignatureVersion = signatureOutput(2).split(" ").last
       val consignmentPath = s"""$efsRootLocation/${file.consignmentId}"""
+
+      //Double quotes around a file will escape almost all characters except double quotes. For these we use single quotes.
+      val fullFilePath = file.originalPath match {
+        case pathWithDoubleQuotes if pathWithDoubleQuotes.contains("\"") => s"""'$consignmentPath/$pathWithDoubleQuotes'"""
+        case pathWithoutDoubleQuotes => s""""$consignmentPath/$pathWithoutDoubleQuotes" """
+      }
       //Adds the file to a profile and runs it. The output is a .droid profile file.
-      s"""$command -a  "$consignmentPath/${file.originalPath}" -p $consignmentPath/${file.fileId}.droid""".!!
+      s"""$command -a  $fullFilePath -p $consignmentPath/${file.fileId}.droid""".!!
       //Exports the profile as a csv
       s"$command -p $consignmentPath/${file.fileId}.droid -E $consignmentPath/${file.fileId}.csv".!!
       val reader = CSVReader.open(new File(s"$consignmentPath/${file.fileId}.csv"))
