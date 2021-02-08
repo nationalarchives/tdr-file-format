@@ -30,8 +30,11 @@ class FFIDExtractor(sqsUtils: SQSUtils, config: Config) {
       val containerSignatureVersion = signatureOutput(1).split(" ").last
       val droidSignatureVersion = signatureOutput(2).split(" ").last
       val consignmentPath = s"""$efsRootLocation/${file.consignmentId}"""
+      val pathWithQuotesReplaced = file.originalPath.replaceAll(""""""", """\\\"""")
+      val filePath = s""""$consignmentPath/$pathWithQuotesReplaced""""
       //Adds the file to a profile and runs it. The output is a .droid profile file.
-      s"""$command -a  "$consignmentPath/${file.originalPath}" -p $consignmentPath/${file.fileId}.droid""".!!
+      val droidCommand = s"""$command -a  $filePath -p $consignmentPath/${file.fileId}.droid"""
+      Seq("bash", "-c", droidCommand).!!
       //Exports the profile as a csv
       s"$command -p $consignmentPath/${file.fileId}.droid -E $consignmentPath/${file.fileId}.csv".!!
       val reader = CSVReader.open(new File(s"$consignmentPath/${file.fileId}.csv"))
@@ -48,11 +51,13 @@ class FFIDExtractor(sqsUtils: SQSUtils, config: Config) {
       val metadataInput = FFIDMetadataInput(file.fileId, "Droid", droidVersion, droidSignatureVersion, containerSignatureVersion, "pronom", matches)
       sendMessage(metadataInput.asJson.noSpaces)
       metadataInput
-    }.toEither.left.map(err => err.errorSummary(s"Error processing file id ${file.fileId} with original path ${file.originalPath}"))
+    }.toEither.left.map(err =>
+      err.errorSummary(s"Error processing file id ${file.fileId} with original path ${file.originalPath}"))
   }
 }
 
 object FFIDExtractor {
+
   case class FFIDFile(consignmentId: UUID, fileId: UUID, originalPath: String)
 
   case class ErrorSummary(message: String, err: Throwable)
