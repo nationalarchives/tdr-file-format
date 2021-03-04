@@ -75,4 +75,14 @@ class LambdaTest extends SqsSpec with FileSpec {
     }
     metadata.fileId should equal(UUID.fromString("acea5919-25a3-4c6b-8908-fa47cc77878f"))
   }
+
+  "The update method" should "send the correct output if the path has backticks" in {
+    new Lambda().process(createEvent("sns_ffid_path_with_backtick_event"), null)
+    val msgs = outputQueueHelper.receive
+    val metadata: FFIDMetadataInput = decode[FFIDMetadataInput](msgs(0).body) match {
+      case Right(metadata) => metadata
+      case Left(error) => throw error
+    }
+    metadata.fileId should equal(UUID.fromString("acea5919-25a3-4c6b-8908-fa47cc77878f"))
+  }
 }

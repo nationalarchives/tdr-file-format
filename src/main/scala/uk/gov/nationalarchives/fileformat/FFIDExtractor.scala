@@ -30,7 +30,9 @@ class FFIDExtractor(sqsUtils: SQSUtils, config: Config) {
       val containerSignatureVersion = signatureOutput(1).split(" ").last
       val droidSignatureVersion = signatureOutput(2).split(" ").last
       val consignmentPath = s"""$efsRootLocation/${file.consignmentId}"""
-      val pathWithQuotesReplaced = file.originalPath.replaceAll(""""""", """\\\"""")
+      val pathWithQuotesReplaced = file.originalPath
+        .replaceAll(""""""", """\\\"""")
+        .replaceAll("`", "\\\\`")
       val filePath = s""""$consignmentPath/$pathWithQuotesReplaced""""
       //Adds the file to a profile and runs it. The output is a .droid profile file.
       val droidCommand = s"""$command -a  $filePath -p $consignmentPath/${file.fileId}.droid"""
