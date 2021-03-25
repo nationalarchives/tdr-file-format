@@ -50,9 +50,9 @@ class FFIDExtractorTest extends FileSpec {
   }
 
   def sqsUtils: SQSUtils = mock[SQSUtils]
-  def config(commandArg: String): Config = ConfigFactory.parseMap(
-    Map("command" -> s"test.sh $commandArg.csv", "efs.root.location" -> "./src/test/resources/testfiles", "sqs.queue.output" -> "output").asJava
-  )
+  def config(commandArg: String): Map[String, String] =
+    Map("command" -> s"test.sh $commandArg.csv", "efs.root.location" -> "./src/test/resources/testfiles", "sqs.queue.output" -> "output")
+
   def ffidFile: FFIDFile = FFIDFile(UUID.fromString("f0a73877-6057-4bbb-a1eb-7c7b73cab586"), UUID.fromString("acea5919-25a3-4c6b-8908-fa47cc77878f"), "originalPath")
   def ffidFileWithQuote: FFIDFile = FFIDFile(UUID.fromString("f0a73877-6057-4bbb-a1eb-7c7b73cab586"), UUID.fromString("acea5919-25a3-4c6b-8908-fa47cc77878f"), """rootDirectory/originalPath"withQu'ote""")
 }

@@ -2,17 +2,26 @@ package uk.gov.nationalarchives.fileformat
 
 import java.net.URI
 import java.util.Base64
-
 import com.amazonaws.services.lambda.runtime.events.SQSEvent
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage
+import com.github.tomakehurst.wiremock.WireMockServer
+import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder
+import com.github.tomakehurst.wiremock.common.FileSource
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration
+import com.github.tomakehurst.wiremock.extension.{Parameters, ResponseDefinitionTransformer}
+import com.github.tomakehurst.wiremock.http.{Request, ResponseDefinition}
 import io.findify.sqsmock.SQSService
 import org.mockito.MockitoSugar
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.sqs.SqsClient
 import software.amazon.awssdk.services.sqs.model._
 
+import java.nio.ByteBuffer
+import java.nio.charset.Charset
 import scala.io.Source.fromResource
 import scala.jdk.CollectionConverters._
+import io.circe.generic.auto._
+import io.circe.parser.decode
 
 object AWSUtils extends MockitoSugar {
 
@@ -30,6 +39,23 @@ object AWSUtils extends MockitoSugar {
 
   val inputQueueHelper: QueueHelper = QueueHelper(inputQueueUrl)
   val outputQueueHelper: QueueHelper = QueueHelper(outputQueueUrl)
+
+  val wiremockKmsEndpoint = new WireMockServer(new WireMockConfiguration().port(9003).extensions(new ResponseDefinitionTransformer {
+    override def transform(request: Request, responseDefinition: ResponseDefinition, files: FileSource, parameters: Parameters): ResponseDefinition = {
+      case class KMSRequest(CiphertextBlob: String)
+      decode[KMSRequest](request.getBodyAsString) match {
+        case Left(err) => throw err
+        case Right(req) =>
+          val charset = Charset.defaultCharset()
+          val plainText = charset.newDecoder.decode(ByteBuffer.wrap(req.CiphertextBlob.getBytes(charset))).toString
+          ResponseDefinitionBuilder
+            .like(responseDefinition)
+            .withBody(s"""{"Plaintext": "$plainText"}""")
+            .build()
+      }
+    }
+    override def getName: String = ""
+  }))
 
   def createEvent(locations: String*): SQSEvent = {
     val event = new SQSEvent()

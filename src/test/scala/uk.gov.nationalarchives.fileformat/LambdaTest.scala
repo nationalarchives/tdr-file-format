@@ -7,7 +7,7 @@ import io.circe.parser.decode
 import org.scalatest.matchers.should.Matchers.{equal, _}
 import uk.gov.nationalarchives.fileformat.AWSUtils._
 
-class LambdaTest extends SqsSpec with FileSpec {
+class LambdaTest extends AWSSpec with FileSpec {
 
   "The update method" should "put a message in the output queue if the message is successful " in {
     new Lambda().process(createEvent("sns_ffid_event"), null)
