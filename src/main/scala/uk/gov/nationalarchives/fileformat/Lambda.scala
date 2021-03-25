@@ -22,7 +22,8 @@ class Lambda {
 
   case class FFIDFileWithReceiptHandle(ffidFile: FFIDFile, receiptHandle: String)
 
-  val kmsUtils: KMSUtils = KMSUtils(kms, Map("LambdaFunctionName" -> ConfigFactory.load.getString("function.name")))
+  val configFactory: Config = ConfigFactory.load
+  val kmsUtils: KMSUtils = KMSUtils(kms(configFactory.getString("kms.endpoint")), Map("LambdaFunctionName" -> configFactory.getString("function.name")))
   val lambdaConfig: Map[String, String] = kmsUtils.decryptValuesFromConfig(
     List("sqs.queue.input", "sqs.queue.output", "efs.root.location", "command")
   )
