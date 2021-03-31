@@ -2,32 +2,29 @@ package uk.gov.nationalarchives.fileformat
 
 import java.util.UUID
 
-import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.matchers.should.Matchers._
 import uk.gov.nationalarchives.aws.utils.SQSUtils
 import uk.gov.nationalarchives.fileformat.FFIDExtractor.FFIDFile
-
-import scala.jdk.CollectionConverters._
 
 class FFIDExtractorTest extends FileSpec {
 
   "The ffid method" should "return the correct droid and signature version" in {
     val result = FFIDExtractor(sqsUtils, config("result_some_parent_ids")).ffidFile(ffidFile)
 
-    val ffid = result.right.get
+    val ffid = result.right.value
     ffid.softwareVersion should equal("6.5")
     ffid.containerSignatureFileVersion should equal("container-signature-20200121.xml")
   }
 
   "The ffid method" should "filter out any entries with parent ids" in {
     val result = FFIDExtractor(sqsUtils, config("result_some_parent_ids")).ffidFile(ffidFile)
-    val ffid = result.right.get
+    val ffid = result.right.value
     ffid.matches.size should equal(1)
   }
 
   "The ffid method" should "return the correct value if the extension and puid are empty" in {
     val result = FFIDExtractor(sqsUtils, config("result_empty_ext_and_puid")).ffidFile(ffidFile)
-    val ffid = result.right.get
+    val ffid = result.right.value
     val m = ffid.matches.head
     m.extension.isEmpty should be(true)
     m.puid.isEmpty should be(true)
@@ -35,7 +32,7 @@ class FFIDExtractorTest extends FileSpec {
 
   "The ffid method" should "return more than one result for multiple result rows" in {
     val result = FFIDExtractor(sqsUtils, config("result_multiple_rows")).ffidFile(ffidFile)
-    val ffid = result.right.get
+    val ffid = result.right.value
     ffid.matches.size should equal(3)
   }
 
