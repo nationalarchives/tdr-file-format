@@ -10,8 +10,8 @@ import io.circe.generic.auto._
 import io.circe.generic.semiauto.deriveDecoder
 import io.circe.parser.decode
 import software.amazon.awssdk.services.sqs.model.{DeleteMessageResponse, SendMessageResponse}
-import uk.gov.nationalarchives.aws.utils.Clients.sqs
-import uk.gov.nationalarchives.aws.utils.SQSUtils
+import uk.gov.nationalarchives.aws.utils.Clients.{kms, sqs}
+import uk.gov.nationalarchives.aws.utils.{KMSUtils, SQSUtils}
 import uk.gov.nationalarchives.fileformat.FFIDExtractor.FFIDFile
 
 import scala.jdk.CollectionConverters._
@@ -22,18 +22,23 @@ class Lambda {
 
   case class FFIDFileWithReceiptHandle(ffidFile: FFIDFile, receiptHandle: String)
 
-  val config: Config = ConfigFactory.load
+  val configFactory: Config = ConfigFactory.load
+  val kmsUtils: KMSUtils = KMSUtils(kms(configFactory.getString("kms.endpoint")), Map("LambdaFunctionName" -> configFactory.getString("function.name")))
+  val lambdaConfig: Map[String, String] = kmsUtils.decryptValuesFromConfig(
+    List("sqs.queue.input", "sqs.queue.output", "efs.root.location", "command")
+  )
+
   val sqsUtils: SQSUtils = SQSUtils(sqs)
 
-  val deleteMessage: String => DeleteMessageResponse = sqsUtils.delete(config.getString("sqs.queue.input"), _)
-  val sendMessage: String => SendMessageResponse = sqsUtils.send(config.getString("sqs.queue.output"), _)
+  val deleteMessage: String => DeleteMessageResponse = sqsUtils.delete(lambdaConfig("sqs.queue.input"), _)
+  val sendMessage: String => SendMessageResponse = sqsUtils.send(lambdaConfig("sqs.queue.output"), _)
 
   val downloadOutput: Decoder[FFIDFile] = deriveDecoder[FFIDFile].map[FFIDFile](identity)
 
   val logger: Logger = Logger[Lambda]
 
   def extractFFID(fileWithHandle: FFIDFileWithReceiptHandle): Either[ErrorSummary, String] = {
-    FFIDExtractor(sqsUtils, config).ffidFile(fileWithHandle.ffidFile)
+    FFIDExtractor(sqsUtils, lambdaConfig).ffidFile(fileWithHandle.ffidFile)
       .map(_ => fileWithHandle.receiptHandle)
   }
 
