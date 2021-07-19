@@ -11,9 +11,6 @@ trait AWSSpec extends BeforeAndAfterEach with BeforeAndAfterAll { this: Suite =>
   override def beforeAll(): Unit = {
     wiremockKmsEndpoint.start()
     wiremockKmsEndpoint.stubFor(post(urlEqualTo("/")))
-    api.start()
-    inputQueueHelper.createQueue
-    outputQueueHelper.createQueue
 
     super.beforeAll()
   }
@@ -22,13 +19,19 @@ trait AWSSpec extends BeforeAndAfterEach with BeforeAndAfterAll { this: Suite =>
     super.afterAll()
 
     wiremockKmsEndpoint.stop()
-    api.shutdown
+  }
+
+  override def beforeEach(): Unit = {
+    inputQueueHelper.createQueue
+    outputQueueHelper.createQueue
+
+    super.beforeEach()
   }
 
   override def afterEach(): Unit = {
     super.afterEach()
 
-    inputQueueHelper.receive.foreach(inputQueueHelper.delete)
-    outputQueueHelper.receive.foreach(inputQueueHelper.delete)
+    inputQueueHelper.deleteQueue
+    outputQueueHelper.deleteQueue
   }
 }

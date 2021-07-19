@@ -29,7 +29,8 @@ lazy val root = (project in file("."))
       logback,
       scalaTest % Test,
       mockito % Test,
-      sqsMock % Test
+      elasticMq % Test,
+      elasticMqSqs % Test
     )
   )
 

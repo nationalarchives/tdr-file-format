@@ -17,5 +17,6 @@ object Dependencies {
   lazy val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2"
   lazy val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
   lazy val mockito = "org.mockito" %% "mockito-scala" % "1.14.1"
-  lazy val sqsMock = "io.findify" %% "sqsmock" % "0.3.4"
+  lazy val elasticMq = "org.elasticmq" %% "elasticmq-server" % "1.1.1"
+  lazy val elasticMqSqs = "org.elasticmq" %% "elasticmq-rest-sqs" % "1.1.1"
 }
