@@ -2,11 +2,14 @@ package uk.gov.nationalarchives.fileformat
 
 import java.util.UUID
 
+import org.mockito.MockitoSugar
+import org.scalatest.EitherValues
+import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers._
 import uk.gov.nationalarchives.aws.utils.SQSUtils
 import uk.gov.nationalarchives.fileformat.FFIDExtractor.FFIDFile
 
-class FFIDExtractorTest extends FileSpec {
+class FFIDExtractorTest extends AnyFlatSpec with FileSpec with MockitoSugar with EitherValues {
 
   "The ffid method" should "return the correct droid and signature version" in {
     val result = FFIDExtractor(sqsUtils, config("result_some_parent_ids")).ffidFile(ffidFile)
