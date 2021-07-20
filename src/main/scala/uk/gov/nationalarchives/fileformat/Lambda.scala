@@ -16,7 +16,6 @@ import uk.gov.nationalarchives.fileformat.FFIDExtractor.FFIDFile
 
 import scala.jdk.CollectionConverters._
 import scala.language.postfixOps
-import uk.gov.nationalarchives.fileformat.FFIDExtractor._
 
 class Lambda {
 
@@ -37,18 +36,18 @@ class Lambda {
 
   val logger: Logger = Logger[Lambda]
 
-  def extractFFID(fileWithHandle: FFIDFileWithReceiptHandle): Either[ErrorSummary, String] = {
+  def extractFFID(fileWithHandle: FFIDFileWithReceiptHandle): Either[Throwable, String] = {
     FFIDExtractor(sqsUtils, lambdaConfig).ffidFile(fileWithHandle.ffidFile)
       .map(_ => fileWithHandle.receiptHandle)
   }
 
-  def decodeBody(record: SQSMessage): Either[ErrorSummary, FFIDFileWithReceiptHandle] = {
+  def decodeBody(record: SQSMessage): Either[Throwable, FFIDFileWithReceiptHandle] = {
     decode[FFIDFile](record.getBody)
-      .left.map(_.errorSummary(s"Error extracting the file information from the incoming message ${record.getBody}"))
+      .left.map(e => new RuntimeException(s"Error extracting the file information from the incoming message ${record.getBody}", e))
       .map(ffidFile => FFIDFileWithReceiptHandle(ffidFile, record.getReceiptHandle))
   }
 
-  def logErrorSummary(errorSummary: ErrorSummary): Unit = logger.error(errorSummary.message, errorSummary.err)
+  def logErrorSummary(error: Throwable): Unit = logger.error("Failed to run file format check", error)
 
   def process(event: SQSEvent, context: Context): List[String] = {
     val (errors, receiptHandles) = event.getRecords.asScala.toList
@@ -59,7 +58,7 @@ class Lambda {
     if(errors.nonEmpty) {
       receiptHandles.foreach(deleteMessage)
       errors.foreach(logErrorSummary)
-      throw new RuntimeException(errors.map(_.message).mkString("\n"))
+      throw new RuntimeException(errors.map(_.getMessage).mkString("\n"))
     } else {
       receiptHandles
     }
