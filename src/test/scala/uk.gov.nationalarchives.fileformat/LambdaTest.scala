@@ -15,21 +15,30 @@ class LambdaTest extends AnyFlatSpec with AWSSpec with FileSpec {
     outputQueueHelper.availableMessageCount should equal(1)
   }
 
-  "The update method" should "put one message in the output queue, delete the successful message and leave the key error message" in {
-    intercept[RuntimeException] {
-      new Lambda().process(createEvent("sns_ffid_event", "sns_ffid_invalid_consignment_id"), null)
-    }
-
-    outputQueueHelper.availableMessageCount should equal(1)
-    inputQueueHelper.notVisibleMessageCount should equal(1)
-  }
-
-  "The update method" should "leave the queues unchanged if there are no successful messages" in {
+  "The update method" should "reset the visibility of a message which fails the parsing step so it can be retried" in {
     intercept[RuntimeException] {
       new Lambda().process(createEvent("sns_ffid_invalid_consignment_id"), null)
     }
-    outputQueueHelper.availableMessageCount should equal(0)
-    inputQueueHelper.notVisibleMessageCount should equal(1)
+
+    inputQueueHelper.availableMessageCount should equal(1)
+  }
+
+  "The update method" should "reset the visibility of a message which fails the FFID process so it can be retried" in {
+    intercept[RuntimeException] {
+      new Lambda().process(createEvent("sns_ffid_missing_file"), null)
+    }
+
+    inputQueueHelper.availableMessageCount should equal(1)
+  }
+
+  "The update method" should "put one message in the output queue, delete the successful message and leave the error messages" in {
+    intercept[RuntimeException] {
+      new Lambda().process(createEvent("sns_ffid_missing_file", "sns_ffid_event", "sns_ffid_invalid_consignment_id"), null)
+    }
+
+    outputQueueHelper.availableMessageCount should equal(1)
+    inputQueueHelper.availableMessageCount should equal(2)
+    inputQueueHelper.notVisibleMessageCount should equal(0)
   }
 
   "The update method" should "return the receipt handle for a successful message" in {

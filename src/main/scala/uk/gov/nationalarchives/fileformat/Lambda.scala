@@ -29,7 +29,8 @@ class Lambda {
 
   val sqsUtils: SQSUtils = SQSUtils(sqs)
 
-  val deleteMessage: String => DeleteMessageResponse = sqsUtils.delete(lambdaConfig("sqs.queue.input"), _)
+  val inputQueueUrl: String = lambdaConfig("sqs.queue.input")
+  val deleteMessage: String => DeleteMessageResponse = sqsUtils.delete(inputQueueUrl, _)
   val sendMessage: String => SendMessageResponse = sqsUtils.send(lambdaConfig("sqs.queue.output"), _)
 
   val downloadOutput: Decoder[FFIDFile] = deriveDecoder[FFIDFile].map[FFIDFile](identity)
@@ -41,9 +42,13 @@ class Lambda {
       .map(_ => fileWithHandle.receiptHandle)
   }
 
-  def decodeBody(record: SQSMessage): Either[Throwable, FFIDFileWithReceiptHandle] = {
+  def decodeBody(record: SQSMessage): Either[FailedMessage, FFIDFileWithReceiptHandle] = {
     decode[FFIDFile](record.getBody)
-      .left.map(e => new RuntimeException(s"Error extracting the file information from the incoming message ${record.getBody}", e))
+      .left.map(e => FailedMessage(
+        s"Error extracting the file information from the incoming message ${record.getBody}",
+        e,
+        record.getReceiptHandle)
+      )
       .map(ffidFile => FFIDFileWithReceiptHandle(ffidFile, record.getReceiptHandle))
   }
 
@@ -52,15 +57,26 @@ class Lambda {
   def process(event: SQSEvent, context: Context): List[String] = {
     val (errors, receiptHandles) = event.getRecords.asScala.toList
       .map(decodeBody)
-      .map(_.map(extractFFID).flatten)
+      .map(_.map(fileWithReceiptHandle =>
+        extractFFID(fileWithReceiptHandle)
+          .left.map(e => FailedMessage(e.getMessage, e, fileWithReceiptHandle.receiptHandle))
+      ).flatten)
       .partitionMap(identity)
 
     if(errors.nonEmpty) {
       receiptHandles.foreach(deleteMessage)
-      errors.foreach(logErrorSummary)
+      errors.foreach(handleFailedMessage)
       throw new RuntimeException(errors.map(_.getMessage).mkString("\n"))
     } else {
       receiptHandles
     }
   }
+
+  private def handleFailedMessage(e: FailedMessage): Unit = {
+    logErrorSummary(e)
+    sqsUtils.makeMessageVisible(inputQueueUrl, e.receiptHandle)
+  }
 }
+
+case class FailedMessage(message: String, cause: Throwable, receiptHandle: String)
+  extends RuntimeException(message, cause)
