@@ -10,43 +10,44 @@ import uk.gov.nationalarchives.fileformat.AWSUtils._
 
 class LambdaTest extends AnyFlatSpec with AWSSpec with FileSpec {
 
-  "The update method" should "put a message in the output queue if the message is successful " in {
+  "The update method" should "put a message in the output queue if the message is successful" in {
     new Lambda().process(createEvent("sns_ffid_event"), null)
-    val msgs = outputQueueHelper.receive
-    msgs.size should equal(1)
+    outputQueueHelper.availableMessageCount should equal(1)
   }
 
   "The update method" should "put one message in the output queue, delete the successful message and leave the key error message" in {
     intercept[RuntimeException] {
       new Lambda().process(createEvent("sns_ffid_event", "sns_ffid_invalid_consignment_id"), null)
     }
-    val outputMessages = outputQueueHelper.receive
-    val inputMessages = inputQueueHelper.receive
-    outputMessages.size should equal(1)
-    inputMessages.size should equal(1)
-  }
 
+    outputQueueHelper.availableMessageCount should equal(1)
+    inputQueueHelper.notVisibleMessageCount should equal(1)
+  }
 
   "The update method" should "leave the queues unchanged if there are no successful messages" in {
     intercept[RuntimeException] {
       new Lambda().process(createEvent("sns_ffid_invalid_consignment_id"), null)
     }
-    val outputMessages = outputQueueHelper.receive
-    val inputMessages = inputQueueHelper.receive
-    outputMessages.size should equal(0)
-    inputMessages.size should equal(1)
+    outputQueueHelper.availableMessageCount should equal(0)
+    inputQueueHelper.notVisibleMessageCount should equal(1)
   }
 
   "The update method" should "return the receipt handle for a successful message" in {
     val event = createEvent("sns_ffid_event")
+    val originalReceiptHandle = event.getRecords.get(0).getReceiptHandle
+
     val response = new Lambda().process(event, null)
-    response(0) should equal(receiptHandle(event.getRecords.get(0).getBody))
+
+    response(0) should equal(originalReceiptHandle)
   }
 
   "The update method" should "return the receipt handle for a successful message for a file in a nested directory" in {
     val event = createEvent("sns_ffid_nested_directory_event")
+    val originalReceiptHandle = event.getRecords.get(0).getReceiptHandle
+
     val response = new Lambda().process(event, null)
-    response(0) should equal(receiptHandle(event.getRecords.get(0).getBody))
+
+    response(0) should equal(originalReceiptHandle)
   }
 
   "The update method" should "throw an exception for an invalid consignment id error" in {

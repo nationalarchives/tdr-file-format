@@ -1,7 +1,9 @@
 package uk.gov.nationalarchives.fileformat
 
 import java.net.URI
-import java.util.Base64
+import java.nio.ByteBuffer
+import java.nio.charset.Charset
+
 import com.amazonaws.services.lambda.runtime.events.SQSEvent
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage
 import com.github.tomakehurst.wiremock.WireMockServer
@@ -10,32 +12,27 @@ import com.github.tomakehurst.wiremock.common.FileSource
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import com.github.tomakehurst.wiremock.extension.{Parameters, ResponseDefinitionTransformer}
 import com.github.tomakehurst.wiremock.http.{Request, ResponseDefinition}
-import io.findify.sqsmock.SQSService
+import io.circe.generic.auto._
+import io.circe.parser.decode
+import org.elasticmq.rest.sqs.SQSRestServerBuilder
 import org.mockito.MockitoSugar
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.sqs.SqsClient
 import software.amazon.awssdk.services.sqs.model._
 
-import java.nio.ByteBuffer
-import java.nio.charset.Charset
 import scala.io.Source.fromResource
 import scala.jdk.CollectionConverters._
-import io.circe.generic.auto._
-import io.circe.parser.decode
 
 object AWSUtils extends MockitoSugar {
 
-  def receiptHandle(body: String): String = Base64.getEncoder.encodeToString(body.getBytes("UTF-8"))
-
   val port = 8001
-  val account = 1
 
   val inputQueueName = "testqueueinput"
   val outputQueueName = "testqueueoutput"
 
-  val api = new SQSService(port, account)
-  val inputQueueUrl = s"http://localhost:$port/$account/$inputQueueName"
-  val outputQueueUrl = s"http://localhost:$port/$account/$outputQueueName"
+  val api = SQSRestServerBuilder.withPort(port).withAWSRegion(Region.EU_WEST_2.toString).start()
+  val inputQueueUrl = s"http://localhost:$port/queue/$inputQueueName"
+  val outputQueueUrl = s"http://localhost:$port/queue/$outputQueueName"
 
   val inputQueueHelper: QueueHelper = QueueHelper(inputQueueUrl)
   val outputQueueHelper: QueueHelper = QueueHelper(outputQueueUrl)
@@ -64,9 +61,15 @@ object AWSUtils extends MockitoSugar {
       val record = new SQSMessage()
       val body = fromResource(s"json/$location.json").mkString
       record.setBody(body)
-      inputQueueHelper.send(body)
-      record.setReceiptHandle(receiptHandle(body))
+      val sendResponse = inputQueueHelper.send(body)
+      record.setMessageId(sendResponse.messageId)
       record
+    })
+
+    val inputQueueMessages = inputQueueHelper.receive
+    records.foreach(record => {
+      val receiptHandle = inputQueueMessages.filter(_.messageId == record.getMessageId).head.receiptHandle
+      record.setReceiptHandle(receiptHandle)
     })
 
     event.setRecords(records.asJava)
@@ -90,8 +93,22 @@ object AWSUtils extends MockitoSugar {
 
     def createQueue: CreateQueueResponse = sqsClient.createQueue(CreateQueueRequest.builder.queueName(queueUrl.split("/")(4)).build())
 
+    def deleteQueue: DeleteQueueResponse = sqsClient.deleteQueue(DeleteQueueRequest.builder.queueUrl(queueUrl).build)
+
     def delete(msg: Message): DeleteMessageResponse = sqsClient.deleteMessage(DeleteMessageRequest
       .builder.queueUrl(queueUrl).receiptHandle(msg.receiptHandle()).build)
-  }
 
+    def availableMessageCount: Int = attribute(QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES).toInt
+
+    def notVisibleMessageCount: Int = attribute(QueueAttributeName.APPROXIMATE_NUMBER_OF_MESSAGES_NOT_VISIBLE).toInt
+
+    private def attribute(name: QueueAttributeName): String = sqsClient
+      .getQueueAttributes(
+        GetQueueAttributesRequest
+          .builder
+          .queueUrl(queueUrl)
+          .attributeNames(name)
+          .build
+      ).attributes.get(name)
+  }
 }
