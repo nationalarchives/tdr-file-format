@@ -6,20 +6,19 @@ import java.util.UUID
 import com.github.tototoshi.csv.CSVReader
 import com.typesafe.scalalogging.Logger
 import graphql.codegen.types.{FFIDMetadataInput, FFIDMetadataInputMatches}
+import io.circe.syntax._
 import software.amazon.awssdk.services.sqs.model.SendMessageResponse
 import uk.gov.nationalarchives.aws.utils.SQSUtils
 import uk.gov.nationalarchives.fileformat.FFIDExtractor._
 
 import scala.sys.process._
-import io.circe.syntax._
-
 import scala.util.Try
 
 class FFIDExtractor(sqsUtils: SQSUtils, config: Map[String, String]) {
   val sendMessage: String => SendMessageResponse = sqsUtils.send(config("sqs.queue.output"), _)
   val logger: Logger = Logger[FFIDExtractor]
 
-  def ffidFile(file: FFIDFile): Either[ErrorSummary, FFIDMetadataInput] = {
+  def ffidFile(file: FFIDFile): Either[Throwable, FFIDMetadataInput] = {
     Try {
       val efsRootLocation = config("efs.root.location")
       val command = s"$efsRootLocation/${config("command")}"
@@ -56,19 +55,14 @@ class FFIDExtractor(sqsUtils: SQSUtils, config: Map[String, String]) {
       logger.info(s"File metadata found for fileId ${file.fileId}" )
       metadataInput
     }.toEither.left.map(err =>
-      err.errorSummary(s"Error processing file id ${file.fileId} with original path ${file.originalPath}"))
+      new RuntimeException(s"Error processing file id ${file.fileId} with original path ${file.originalPath}", err)
+    )
   }
 }
 
 object FFIDExtractor {
 
   case class FFIDFile(consignmentId: UUID, fileId: UUID, originalPath: String)
-
-  case class ErrorSummary(message: String, err: Throwable)
-
-  implicit class ErrorFunction(err: Throwable) {
-    def errorSummary(logMessage: String): ErrorSummary = ErrorSummary(logMessage, err)
-  }
 
   def apply(sqsUtils: SQSUtils, config: Map[String, String]): FFIDExtractor = new FFIDExtractor(sqsUtils, config)
 }

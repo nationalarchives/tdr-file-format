@@ -41,7 +41,8 @@ class FFIDExtractorTest extends AnyFlatSpec with FileSpec with MockitoSugar with
 
   "The ffid method" should "return an error if there is an error running the droid commands" in {
     val result = FFIDExtractor(sqsUtils, config("invalid_command")).ffidFile(ffidFile)
-    result.left.value.err.getMessage should equal("Nonzero exit value: 1")
+    result.left.value.getMessage should equal("Error processing file id acea5919-25a3-4c6b-8908-fa47cc77878f with original path originalPath")
+    result.left.value.getCause.getMessage should equal("Nonzero exit value: 1")
   }
 
   "The ffid method" should "return a correct value if there are quotes in the filename" in {
