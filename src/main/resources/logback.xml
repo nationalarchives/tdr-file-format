@@ -2,7 +2,7 @@
 <configuration>
     <appender name="json" class="ch.qos.logback.core.ConsoleAppender">
         <encoder class="net.logstash.logback.encoder.LogstashEncoder">
-            <customFields>{"application":"tdr-api-update"}</customFields>
+            <customFields>{"application":"tdr-file-format"}</customFields>
         </encoder>
     </appender>
 
