@@ -27,6 +27,7 @@ lazy val root = (project in file("."))
       graphqlClient,
       scalaLogging,
       logback,
+      logstashLogbackEncoder,
       scalaTest % Test,
       mockito % Test,
       elasticMq % Test,

@@ -1,5 +1,6 @@
 package uk.gov.nationalarchives.fileformat
 
+import net.logstash.logback.argument.StructuredArguments.value
 import java.io.File
 import java.util.UUID
 
@@ -52,11 +53,21 @@ class FFIDExtractor(sqsUtils: SQSUtils, config: Map[String, String]) {
       val metadataInput = FFIDMetadataInput(file.fileId, "Droid", droidVersion, droidSignatureVersion, containerSignatureVersion, "pronom", matches)
 
       sendMessage(metadataInput.asJson.noSpaces)
-      logger.info(s"File metadata found for fileId ${file.fileId}" )
+      logger.info(
+        "File metadata with {} matches found for file ID {} in consignment ID {}",
+        value("matchCount", matches.length),
+        value("fileId", file.fileId),
+        value("consignmentId", file.consignmentId)
+      )
       metadataInput
-    }.toEither.left.map(err =>
+    }.toEither.left.map(err => {
+      logger.error(
+        "Error processing file ID {}' in consignment ID {}",
+        value("fileId", file.fileId),
+        value("consignmentId", file.consignmentId)
+      )
       new RuntimeException(s"Error processing file id ${file.fileId} with original path ${file.originalPath}", err)
-    )
+    })
   }
 }
 
