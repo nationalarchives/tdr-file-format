@@ -50,6 +50,9 @@ class FFIDExtractor(sqsUtils: SQSUtils, config: Map[String, String]) {
           val puid = o(14).toOpt
           FFIDMetadataInputMatches(extension, identificationBasis, puid)
         })
+      if(matches.isEmpty) {
+        throw new RuntimeException(s"${file.fileId} with original path ${file.originalPath} has no matches")
+      }
       val metadataInput = FFIDMetadataInput(file.fileId, "Droid", droidVersion, droidSignatureVersion, containerSignatureVersion, "pronom", matches)
 
       sendMessage(metadataInput.asJson.noSpaces)
