@@ -50,6 +50,12 @@ class FFIDExtractorTest extends AnyFlatSpec with FileSpec with MockitoSugar with
     result.isRight should be (true)
   }
 
+  "The ffid method" should "return an error if there are no matches" in {
+    val result = FFIDExtractor(sqsUtils, config("result_no_matches")).ffidFile(ffidFile)
+    result.left.value.getMessage should equal("Error processing file id acea5919-25a3-4c6b-8908-fa47cc77878f with original path originalPath")
+    result.left.value.getCause.getMessage should equal("acea5919-25a3-4c6b-8908-fa47cc77878f with original path originalPath has no matches")
+  }
+
   def sqsUtils: SQSUtils = mock[SQSUtils]
   def config(commandArg: String): Map[String, String] =
     Map("command" -> s"test.sh $commandArg.csv", "efs.root.location" -> "./src/test/resources/testfiles", "sqs.queue.output" -> "output")
