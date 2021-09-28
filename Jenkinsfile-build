@@ -11,7 +11,7 @@ pipeline {
   stages {
     stage("Push Docker image") {
       agent {
-        label "master"
+        label "built-in"
       }
       steps {
         script {
