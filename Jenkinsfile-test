@@ -26,7 +26,7 @@ pipeline {
       steps {
         script {
           tdr.reportStartOfBuildToGitHub(repo, env.GIT_COMMIT)
-          tdr.assembleAndStash(${libraryName})
+          tdr.assembleAndStash(libraryName)
         }
       }
     }
@@ -47,7 +47,7 @@ pipeline {
         stage("Push Docker image") {
           steps {
             script {
-              tdr.buildAndPushImage("file-format-build", ${versionTag})
+              tdr.buildAndPushImage("file-format-build", versionTag)
               tdr.postToDaTdrSlackChannel(colour: "good", message: "*File Format Build* :whale: Pushed version ${versionTag} to AWS ECR")
 
               build(
@@ -94,7 +94,7 @@ pipeline {
 
         if (["main", "master"].contains(env.BRANCH_NAME)) {
           tdr.postToDaTdrSlackChannel(colour: "danger",
-            message: "*${config.libraryName}* :warning: ${env.BRANCH_NAME.capitalize()} branch build failed: ${env.BUILD_URL}"
+            message: "*${libraryName}* :warning: ${env.BRANCH_NAME.capitalize()} branch build failed: ${env.BUILD_URL}"
           )
         }
       }
@@ -103,7 +103,7 @@ pipeline {
       script {
         if (["main", "master"].contains(env.BRANCH_NAME)) {
           tdr.postToDaTdrSlackChannel(colour: "warning",
-            message: "*${config.libraryName}* :warning: ${env.BRANCH_NAME.capitalize()} branch build marked as unstable: ${env.BUILD_URL}"
+            message: "*${libraryName}* :warning: ${env.BRANCH_NAME.capitalize()} branch build marked as unstable: ${env.BUILD_URL}"
           )
         }
       }
