@@ -1,9 +1,117 @@
 library("tdr-jenkinslib")
 
-lambdaTests(
-        // Hard-code stage, since it is arbitrary in the lambdaTests
-        // function, which publishes the code to the management account
-        stage: "intg",
-        libraryName: "file-format",
-        deployJobName: "TDR File Format Deploy"
-)
+def versionTag = "v${env.BUILD_NUMBER}"
+def libraryName = "file-format"
+def repo = "tdr-file-format"
+
+pipeline {
+  agent {
+    label "built-in"
+  }
+  stages {
+    stage("Run git secrets") {
+      steps {
+        script {
+          tdr.runGitSecrets(repo)
+        }
+      }
+    }
+    stage("Build lambda") {
+      agent {
+        ecs {
+          inheritFrom "transfer-frontend"
+          taskDefinitionOverride "arn:aws:ecs:eu-west-2:${env.MANAGEMENT_ACCOUNT}:task-definition/sbtwithpostgres"
+        }
+      }
+      steps {
+        script {
+          tdr.reportStartOfBuildToGitHub(repo, env.GIT_COMMIT)
+          tdr.assembleAndStash(${libraryName})
+        }
+      }
+    }
+    stage('Post-build') {
+      when {
+        beforeAgent true
+        expression { ["main", "master"].contains(env.BRANCH_NAME) }
+      }
+      stages {
+        stage('Tag Release') {
+          steps {
+            sh "git tag ${versionTag}"
+            sshagent(['github-jenkins']) {
+              sh("git push origin ${versionTag}")
+            }
+          }
+        }
+        stage("Push Docker image") {
+          steps {
+            script {
+              tdr.buildAndPushImage("file-format-build", ${versionTag})
+              tdr.postToDaTdrSlackChannel(colour: "good", message: "*File Format Build* :whale: Pushed version ${versionTag} to AWS ECR")
+
+              build(
+                job: "TDR File Format Build",
+                parameters: [
+                  string(name: "STAGE", value: "intg"),
+                  string(name: "TO_DEPLOY", value: versionTag)
+                ]
+              )
+            }
+          }
+        }
+        stage('Deploy lambda to integration') {
+          agent {
+            ecs {
+              inheritFrom "aws"
+              taskrole "arn:aws:iam::${env.MANAGEMENT_ACCOUNT}:role/TDRJenkinsNodeLambdaRoleIntg"
+            }
+          }
+          steps {
+            script {
+              unstash "${libraryName}-jar"
+              tdr.copyToS3CodeBucket(libraryName, versionTag)
+
+              tdr.configureJenkinsGitUser()
+
+              build(
+                job: "TDR File Format Deploy",
+                parameters: [
+                  string(name: "STAGE", value: "intg"),
+                  string(name: "TO_DEPLOY", value: versionTag)
+                ],
+                wait: false)
+            }
+          }
+        }
+      }
+    }
+  }
+  post {
+    failure {
+      script {
+        tdr.reportFailedBuildToGitHub(repo, env.GIT_COMMIT)
+
+        if (["main", "master"].contains(env.BRANCH_NAME)) {
+          tdr.postToDaTdrSlackChannel(colour: "danger",
+            message: "*${config.libraryName}* :warning: ${env.BRANCH_NAME.capitalize()} branch build failed: ${env.BUILD_URL}"
+          )
+        }
+      }
+    }
+    unstable {
+      script {
+        if (["main", "master"].contains(env.BRANCH_NAME)) {
+          tdr.postToDaTdrSlackChannel(colour: "warning",
+            message: "*${config.libraryName}* :warning: ${env.BRANCH_NAME.capitalize()} branch build marked as unstable: ${env.BUILD_URL}"
+          )
+        }
+      }
+    }
+    success {
+      script {
+        tdr.reportSuccessfulBuildToGitHub(repo, env.GIT_COMMIT)
+      }
+    }
+  }
+}
