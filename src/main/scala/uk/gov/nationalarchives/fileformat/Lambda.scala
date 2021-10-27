@@ -9,11 +9,13 @@ import io.circe.Decoder
 import io.circe.generic.auto._
 import io.circe.generic.semiauto.deriveDecoder
 import io.circe.parser.decode
+import net.logstash.logback.argument.StructuredArguments.value
 import software.amazon.awssdk.services.sqs.model.{DeleteMessageResponse, SendMessageResponse}
 import uk.gov.nationalarchives.aws.utils.Clients.{kms, sqs}
 import uk.gov.nationalarchives.aws.utils.{KMSUtils, SQSUtils}
 import uk.gov.nationalarchives.fileformat.FFIDExtractor.FFIDFile
 
+import java.time.Instant
 import scala.jdk.CollectionConverters._
 import scala.language.postfixOps
 
@@ -37,9 +39,9 @@ class Lambda {
 
   val logger: Logger = Logger[Lambda]
 
-  def extractFFID(fileWithHandle: FFIDFileWithReceiptHandle): Either[Throwable, String] = {
+  def extractFFID(fileWithHandle: FFIDFileWithReceiptHandle): Either[Throwable, FFIDFileWithReceiptHandle] = {
     FFIDExtractor(sqsUtils, lambdaConfig).ffidFile(fileWithHandle.ffidFile)
-      .map(_ => fileWithHandle.receiptHandle)
+      .map(_ => fileWithHandle)
   }
 
   def decodeBody(record: SQSMessage): Either[FailedMessage, FFIDFileWithReceiptHandle] = {
@@ -55,7 +57,8 @@ class Lambda {
   def logErrorSummary(error: Throwable): Unit = logger.error("Failed to run file format check", error)
 
   def process(event: SQSEvent, context: Context): List[String] = {
-    val (errors, receiptHandles) = event.getRecords.asScala.toList
+    val startTime = Instant.now
+    val (errors, filesWithReceiptHandle) = event.getRecords.asScala.toList
       .map(decodeBody)
       .map(_.map(fileWithReceiptHandle =>
         extractFFID(fileWithReceiptHandle)
@@ -64,11 +67,21 @@ class Lambda {
       .partitionMap(identity)
 
     if(errors.nonEmpty) {
-      receiptHandles.foreach(deleteMessage)
+      filesWithReceiptHandle.foreach(f => deleteMessage(f.receiptHandle))
       errors.foreach(handleFailedMessage)
       throw new RuntimeException(errors.map(_.getMessage).mkString("\n"))
     } else {
-      receiptHandles
+      val timeTaken = java.time.Duration.between(startTime, Instant.now).toMillis.toDouble / 1000
+      filesWithReceiptHandle.map(f => {
+        logger.info(
+          s"Lambda complete in {} seconds for file ID '{}' and consignment ID '{}'",
+          value("timeTaken", timeTaken),
+          value("fileId", f.ffidFile.fileId),
+          value("consignmentId", f.ffidFile.consignmentId)
+        )
+        f.receiptHandle
+      })
+
     }
   }
 
