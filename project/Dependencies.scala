@@ -13,9 +13,7 @@ object Dependencies {
   lazy val circeGeneric = "io.circe" %% "circe-generic" % circeVersion
   lazy val circeParser = "io.circe" %% "circe-parser" % circeVersion
   lazy val awsUtils =  "uk.gov.nationalarchives.aws.utils" %% "tdr-aws-utils" % "0.1.20"
-  lazy val authUtils = "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.28"
   lazy val generatedGraphql =  "uk.gov.nationalarchives" %% "tdr-generated-graphql" % "0.0.160"
-  lazy val graphqlClient = "uk.gov.nationalarchives" %% "tdr-graphql-client" % "0.0.16"
   lazy val csvParser = "com.github.tototoshi" %% "scala-csv" % "1.3.6"
   lazy val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2"
   lazy val logback = "ch.qos.logback" % "logback-classic" % "1.2.3"
@@ -23,4 +21,5 @@ object Dependencies {
   lazy val mockito = "org.mockito" %% "mockito-scala" % "1.14.1"
   lazy val elasticMq = "org.elasticmq" %% "elasticmq-server" % elasticMqVersion
   lazy val elasticMqSqs = "org.elasticmq" %% "elasticmq-rest-sqs" % elasticMqVersion
+  lazy val wiremock = "com.github.tomakehurst" % "wiremock" % "2.27.2"
 }
