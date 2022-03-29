@@ -2,7 +2,7 @@ FROM alpine
 RUN addgroup --system fileformatgroup && adduser --system fileformatuser -G fileformatgroup
 RUN apk update \
     && apk add git unzip wget \
-    && apk upgrade apk-tools busybox expat libretls
+    && apk upgrade apk-tools busybox expat libretls zlib
 RUN wget -qq https://cdn.nationalarchives.gov.uk/documents/droid-binary-6.5.2-bin.zip
 COPY droid.sh /
 
