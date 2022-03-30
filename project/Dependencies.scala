@@ -4,7 +4,7 @@ object Dependencies {
   private val circeVersion = "0.13.0"
   private val elasticMqVersion = "1.1.1"
 
-  lazy val scalaTest = "org.scalatest" %% "scalatest" % "3.2.9"
+  lazy val scalaTest = "org.scalatest" %% "scalatest" % "3.2.11"
   lazy val typesafe = "com.typesafe" % "config" % "1.4.0"
   lazy val s3Sdk = "software.amazon.awssdk" % "s3" % "2.13.18"
   lazy val lambdaJavaCore = "com.amazonaws" % "aws-lambda-java-core" % "1.2.1"
