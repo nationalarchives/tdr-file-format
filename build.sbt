@@ -34,16 +34,16 @@ lazy val root = (project in file("."))
     )
   )
 
-fork in Test := true
-javaOptions in Test += s"-Dconfig.file=${sourceDirectory.value}/test/resources/application.conf"
-envVars in Test := Map("AWS_ACCESS_KEY_ID" -> "accesskey", "AWS_SECRET_ACCESS_KEY" -> "secret")
+(Test / fork) := true
+(Test / javaOptions) += s"-Dconfig.file=${sourceDirectory.value}/test/resources/application.conf"
+(Test / envVars) := Map("AWS_ACCESS_KEY_ID" -> "accesskey", "AWS_SECRET_ACCESS_KEY" -> "secret")
 
-assemblyMergeStrategy in assembly := {
+(assembly / assemblyMergeStrategy) := {
   case PathList("META-INF", xs@_*) => MergeStrategy.discard
   case _ => MergeStrategy.first
 }
 
-assemblyJarName in assembly := "file-format.jar"
+(assembly / assemblyJarName) := "file-format.jar"
 
 
 
