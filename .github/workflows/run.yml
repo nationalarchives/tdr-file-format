@@ -23,6 +23,10 @@ jobs:
           role-to-assume: arn:aws:iam::${{ secrets.MANAGEMENT_ACCOUNT }}:role/TDRGithubActionsRoleMgmt
           aws-region: eu-west-2
           role-session-name: ECRLogin
+      - name: Login to ECR
+        uses: docker/login-action@v1
+        with:
+          registry: ${{ secrets.MANAGEMENT_ACCOUNT }}.dkr.ecr.eu-west-2.amazonaws.com
       - run: |
           docker pull $IMAGE_NAME:${{ github.event.inputs.to-deploy }}
           docker tag $IMAGE_NAME:${{ github.event.inputs.to-deploy }} $IMAGE_NAME:$ENVIRONMENT
