@@ -1,6 +1,5 @@
-name: TDR Update Auth Server Configuration
+name: Run File Format ECS Task
 on:
-  push:
   workflow_dispatch:
     inputs:
       environment:
