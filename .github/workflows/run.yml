@@ -1,0 +1,44 @@
+name: TDR Update Auth Server Configuration
+on:
+  push:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment'
+        required: true
+        default: 'intg'
+      to-deploy:
+        description: 'The version to deploy'
+        required: true
+permissions:
+  id-token: write
+jobs:
+  update:
+    environment: ${{ github.event.inputs.environment }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Configure AWS credentials for ECR
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.MANAGEMENT_ACCOUNT }}:role/TDRGithubActionsRoleMgmt
+          aws-region: eu-west-2
+          role-session-name: ECRLogin
+      - run: |
+          docker pull $IMAGE_NAME:${{ github.event.inputs.to-deploy }}
+          docker tag $IMAGE_NAME:${{ github.event.inputs.to-deploy }} $IMAGE_NAME:$ENVIRONMENT
+          docker push $IMAGE_NAME:$ENVIRONMENT
+        env:
+          ENVIRONMENT: ${{ github.event.inputs.environment }}
+          IMAGE_NAME: ${{ secrets.MANAGEMENT_ACCOUNT }}.dkr.ecr.eu-west-2.amazonaws.com/file-format-build
+      - id: role-name
+        run: print(f"::set-output name=role-name::TDRGithubActionsRunFileFormatECS{'${{ github.event.inputs.environment }}'.title()}")
+        shell: python
+      - uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.ACCOUNT_NUMBER }}:role/${{ steps.role-name.outputs.role-name }}
+          aws-region: eu-west-2
+          role-session-name: RunFileFormatBuildTask
+      - run: |
+          pip install boto3
+          python .github/scripts/run_ecs_task.py ${{ secrets.ACCOUNT_NUMBER }} ${{ github.event.inputs.environment }}

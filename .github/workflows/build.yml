@@ -1,0 +1,47 @@
+name: TDR Tag and pre deploy
+on:
+  push:
+    branches:
+      - master
+      - move-to-github-actions
+jobs:
+  pre-deploy:
+    uses: nationalarchives/tdr-github-actions/.github/workflows/lambda_build.yml@main
+    with:
+      repo-name: tdr-file-format
+      artifact-name: file-format
+      build-command: |
+        sbt assembly
+    secrets:
+      MANAGEMENT_ACCOUNT: ${{ secrets.MANAGEMENT_ACCOUNT }}
+      WORKFLOW_PAT: ${{ secrets.WORKFLOW_PAT }}
+  build-image:
+    needs: pre-deploy
+    runs-on: ubuntu-latest
+    steps:
+      - id: changed-files
+        uses: tj-actions/changed-files@v19
+      - uses: actions/checkout@v3
+      - name: Configure AWS credentials for ECR
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.MANAGEMENT_ACCOUNT }}:role/TDRGithubActionsRoleMgmt
+          aws-region: eu-west-2
+          role-session-name: ECRLogin
+      - if: contains(steps.changed-files.outputs.modified_files, 'Dockerfile')
+        run: |
+          docker build -t ${{ secrets.MANAGEMENT_ACCOUNT }}.dkr.ecr.eu-west-2.amazonaws.com/file-format-build:${{ needs.pre-deploy.outputs.next-version }} .
+          docker push ${{ secrets.MANAGEMENT_ACCOUNT }}.dkr.ecr.eu-west-2.amazonaws.com/file-format-build:${{ needs.pre-deploy.outputs.next-version }}
+      - if: contains(steps.changed-files.outputs.modified_files, 'Dockerfile')
+        uses: nationalarchives/tdr-github-actions/.github/actions/slack-send@main
+        with:
+          message: ":white_check_mark: Service file-format-build updated to version ${{ needs.pre-deploy.outputs.next-version }} in integration"
+          slack-url: ${{ secrets.SLACK_WEBHOOK }}
+  deploy:
+    needs: pre-deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: gh workflow run deploy.yml -f environment=intg -f to-deploy=${{ needs.pre-deploy.outputs.next-version }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
