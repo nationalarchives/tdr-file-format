@@ -6,6 +6,7 @@ on:
       - move-to-github-actions
 permissions:
   id-token: write
+  contents: write
 jobs:
   pre-deploy:
     uses: nationalarchives/tdr-github-actions/.github/workflows/lambda_build.yml@main
