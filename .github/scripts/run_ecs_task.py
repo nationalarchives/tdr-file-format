@@ -21,7 +21,7 @@ subnets = [subnet['SubnetId'] for subnet in ec2_client.describe_subnets(Filters=
 ])['Subnets']]
 
 response = client.run_task(
-    cluster="file_format_build" + stage,
+    cluster="file_format_build_" + stage,
     taskDefinition="file-format-build-" + stage,
     launchType="FARGATE",
     platformVersion="1.4.0",
