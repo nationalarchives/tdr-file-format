@@ -6,8 +6,7 @@ ThisBuild / organization := "com.example"
 ThisBuild / organizationName := "example"
 
 resolvers ++= Seq[Resolver](
-  "Sonatype Releases" at "https://dl.bintray.com/mockito/maven/",
-  "TDR Releases" at "s3://tdr-releases-mgmt"
+  "Sonatype Releases" at "https://dl.bintray.com/mockito/maven/"
 )
 
 lazy val root = (project in file("."))
