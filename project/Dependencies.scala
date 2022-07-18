@@ -22,4 +22,8 @@ object Dependencies {
   lazy val elasticMq = "org.elasticmq" %% "elasticmq-server" % elasticMqVersion
   lazy val elasticMqSqs = "org.elasticmq" %% "elasticmq-rest-sqs" % elasticMqVersion
   lazy val wiremock = "com.github.tomakehurst" % "wiremock" % "2.27.2"
+  lazy val droidApi = "uk.gov.nationalarchives" % "droid-api" % "6.6.0-SNAPSHOT"
+  lazy val javaxXml = "javax.xml.bind" % "jaxb-api" % "2.3.1"
+  lazy val javaxCore = "com.sun.xml.bind" % "jaxb-core" % "4.0.0"
+  lazy val javaxImpl = "com.sun.xml.bind" % "jaxb-impl" % "4.0.0"
 }

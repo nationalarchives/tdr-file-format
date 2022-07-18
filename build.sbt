@@ -6,7 +6,8 @@ ThisBuild / organization := "com.example"
 ThisBuild / organizationName := "example"
 
 resolvers ++= Seq[Resolver](
-  "Sonatype Releases" at "https://dl.bintray.com/mockito/maven/"
+  "Sonatype Releases" at "https://dl.bintray.com/mockito/maven/",
+  Resolver.mavenLocal
 )
 
 lazy val root = (project in file("."))
@@ -25,6 +26,10 @@ lazy val root = (project in file("."))
       scalaLogging,
       logback,
       logstashLogbackEncoder,
+      droidApi,
+      javaxCore,
+      javaxImpl,
+      javaxXml,
       scalaTest % Test,
       mockito % Test,
       elasticMq % Test,
