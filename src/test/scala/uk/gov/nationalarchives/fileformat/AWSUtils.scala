@@ -1,25 +1,14 @@
 package uk.gov.nationalarchives.fileformat
 
-import java.net.URI
-import java.nio.ByteBuffer
-import java.nio.charset.Charset
-
 import com.amazonaws.services.lambda.runtime.events.SQSEvent
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage
-import com.github.tomakehurst.wiremock.WireMockServer
-import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder
-import com.github.tomakehurst.wiremock.common.FileSource
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration
-import com.github.tomakehurst.wiremock.extension.{Parameters, ResponseDefinitionTransformer}
-import com.github.tomakehurst.wiremock.http.{Request, ResponseDefinition}
-import io.circe.generic.auto._
-import io.circe.parser.decode
-import org.elasticmq.rest.sqs.SQSRestServerBuilder
+import org.elasticmq.rest.sqs.{SQSRestServer, SQSRestServerBuilder}
 import org.mockito.MockitoSugar
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.sqs.SqsClient
 import software.amazon.awssdk.services.sqs.model._
 
+import java.net.URI
 import scala.io.Source.fromResource
 import scala.jdk.CollectionConverters._
 
@@ -30,29 +19,12 @@ object AWSUtils extends MockitoSugar {
   val inputQueueName = "testqueueinput"
   val outputQueueName = "testqueueoutput"
 
-  val api = SQSRestServerBuilder.withPort(port).withAWSRegion(Region.EU_WEST_2.toString).start()
+  val api: SQSRestServer = SQSRestServerBuilder.withPort(port).withAWSRegion(Region.EU_WEST_2.toString).start()
   val inputQueueUrl = s"http://localhost:$port/queue/$inputQueueName"
   val outputQueueUrl = s"http://localhost:$port/queue/$outputQueueName"
 
   val inputQueueHelper: QueueHelper = QueueHelper(inputQueueUrl)
   val outputQueueHelper: QueueHelper = QueueHelper(outputQueueUrl)
-
-  val wiremockKmsEndpoint = new WireMockServer(new WireMockConfiguration().port(9003).extensions(new ResponseDefinitionTransformer {
-    override def transform(request: Request, responseDefinition: ResponseDefinition, files: FileSource, parameters: Parameters): ResponseDefinition = {
-      case class KMSRequest(CiphertextBlob: String)
-      decode[KMSRequest](request.getBodyAsString) match {
-        case Left(err) => throw err
-        case Right(req) =>
-          val charset = Charset.defaultCharset()
-          val plainText = charset.newDecoder.decode(ByteBuffer.wrap(req.CiphertextBlob.getBytes(charset))).toString
-          ResponseDefinitionBuilder
-            .like(responseDefinition)
-            .withBody(s"""{"Plaintext": "$plainText"}""")
-            .build()
-      }
-    }
-    override def getName: String = ""
-  }))
 
   def createEvent(locations: String*): SQSEvent = {
     val event = new SQSEvent()
@@ -93,7 +65,7 @@ object AWSUtils extends MockitoSugar {
 
     def createQueue: CreateQueueResponse = sqsClient.createQueue(CreateQueueRequest.builder.queueName(queueUrl.split("/")(4)).build())
 
-    def deleteQueue: DeleteQueueResponse = sqsClient.deleteQueue(DeleteQueueRequest.builder.queueUrl(queueUrl).build)
+    def deleteQueue(): DeleteQueueResponse = sqsClient.deleteQueue(DeleteQueueRequest.builder.queueUrl(queueUrl).build)
 
     def delete(msg: Message): DeleteMessageResponse = sqsClient.deleteMessage(DeleteMessageRequest
       .builder.queueUrl(queueUrl).receiptHandle(msg.receiptHandle()).build)

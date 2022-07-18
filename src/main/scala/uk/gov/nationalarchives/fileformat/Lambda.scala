@@ -5,17 +5,16 @@ import com.amazonaws.services.lambda.runtime.events.SQSEvent
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.Logger
-import io.circe.Decoder
 import io.circe.generic.auto._
-import io.circe.generic.semiauto.deriveDecoder
 import io.circe.parser.decode
 import net.logstash.logback.argument.StructuredArguments.value
 import software.amazon.awssdk.services.sqs.model.{DeleteMessageResponse, SendMessageResponse}
-import uk.gov.nationalarchives.aws.utils.Clients.{kms, sqs}
-import uk.gov.nationalarchives.aws.utils.{KMSUtils, SQSUtils}
+import uk.gov.nationalarchives.aws.utils.Clients.sqs
+import uk.gov.nationalarchives.aws.utils.SQSUtils
 import uk.gov.nationalarchives.fileformat.FFIDExtractor.FFIDFile
 
 import java.time.Instant
+import scala.annotation.unused
 import scala.jdk.CollectionConverters._
 import scala.language.postfixOps
 
@@ -24,25 +23,20 @@ class Lambda {
   case class FFIDFileWithReceiptHandle(ffidFile: FFIDFile, receiptHandle: String)
 
   val configFactory: Config = ConfigFactory.load
-  val kmsUtils: KMSUtils = KMSUtils(kms(configFactory.getString("kms.endpoint")), Map("LambdaFunctionName" -> configFactory.getString("function.name")))
-  val lambdaConfig: Map[String, String] = kmsUtils.decryptValuesFromConfig(
-    List("sqs.queue.input", "sqs.queue.output", "efs.root.location", "command")
-  )
 
   val sqsUtils: SQSUtils = SQSUtils(sqs)
 
-  val inputQueueUrl: String = lambdaConfig("sqs.queue.input")
+  val inputQueueUrl: String = configFactory.getString("sqs.queue.input")
   val deleteMessage: String => DeleteMessageResponse = sqsUtils.delete(inputQueueUrl, _)
-  val sendMessage: String => SendMessageResponse = sqsUtils.send(lambdaConfig("sqs.queue.output"), _)
+  val s3Utils: S3Utils = S3Utils()
 
-  val downloadOutput: Decoder[FFIDFile] = deriveDecoder[FFIDFile].map[FFIDFile](identity)
-
+  val ffidExtractor: FFIDExtractor = FFIDExtractor(sqsUtils)
   val logger: Logger = Logger[Lambda]
 
-  def extractFFID(fileWithHandle: FFIDFileWithReceiptHandle): Either[Throwable, FFIDFileWithReceiptHandle] = {
-    FFIDExtractor(sqsUtils, lambdaConfig).ffidFile(fileWithHandle.ffidFile)
-      .map(_ => fileWithHandle)
-  }
+  def extractFFID(fileWithHandle: FFIDFileWithReceiptHandle): Either[Throwable, FFIDFileWithReceiptHandle] = for {
+    _ <- s3Utils.downloadFile(fileWithHandle.ffidFile)
+    _ <- ffidExtractor.ffidFile(fileWithHandle.ffidFile)
+  } yield fileWithHandle
 
   def decodeBody(record: SQSMessage): Either[FailedMessage, FFIDFileWithReceiptHandle] = {
     decode[FFIDFile](record.getBody)
@@ -56,7 +50,7 @@ class Lambda {
 
   def logErrorSummary(error: Throwable): Unit = logger.error("Failed to run file format check", error)
 
-  def process(event: SQSEvent, context: Context): List[String] = {
+  def process(event: SQSEvent, @unused context: Context): List[String] = {
     val startTime = Instant.now
     val (errors, filesWithReceiptHandle) = event.getRecords.asScala.toList
       .map(decodeBody)

@@ -1,14 +1,19 @@
 package uk.gov.nationalarchives.fileformat
 
-import java.util.UUID
-
 import graphql.codegen.types.FFIDMetadataInput
 import io.circe.parser.decode
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers.{equal, _}
 import uk.gov.nationalarchives.fileformat.AWSUtils._
 
+import java.util.UUID
+
 class LambdaTest extends AnyFlatSpec with AWSSpec with FileSpec {
+
+  override def beforeAll(): Unit = {
+    createS3Mock()
+    tnaCdn.start()
+  }
 
   "The update method" should "put a message in the output queue if the message is successful" in {
     new Lambda().process(createEvent("sns_ffid_event"), null)
@@ -47,7 +52,7 @@ class LambdaTest extends AnyFlatSpec with AWSSpec with FileSpec {
 
     val response = new Lambda().process(event, null)
 
-    response(0) should equal(originalReceiptHandle)
+    response.head should equal(originalReceiptHandle)
   }
 
   "The update method" should "return the receipt handle for a successful message for a file in a nested directory" in {
@@ -56,7 +61,7 @@ class LambdaTest extends AnyFlatSpec with AWSSpec with FileSpec {
 
     val response = new Lambda().process(event, null)
 
-    response(0) should equal(originalReceiptHandle)
+    response.head should equal(originalReceiptHandle)
   }
 
   "The update method" should "throw an exception for an invalid consignment id error" in {
@@ -64,13 +69,13 @@ class LambdaTest extends AnyFlatSpec with AWSSpec with FileSpec {
     val exception = intercept[RuntimeException] {
       new Lambda().process(event, null)
     }
-    exception.getMessage should equal("""Error extracting the file information from the incoming message {"consignmentId":  "1", "fileId":  "acea5919-25a3-4c6b-8908-fa47cc77878f", "originalPath" :  "originalPath"}""")
+    exception.getMessage should equal("""Error extracting the file information from the incoming message {"consignmentId":  "1", "fileId":  "acea5919-25a3-4c6b-8908-fa47cc77878f", "originalPath" :  "originalPath", "userId":  "9a5f9f7e-0e1d-4bc6-8c81-a7d305acf324"}""")
   }
 
   "The update method" should "send the correct output to the queue" in {
     new Lambda().process(createEvent("sns_ffid_event"), null)
     val msgs = outputQueueHelper.receive
-    val metadata: FFIDMetadataInput = decode[FFIDMetadataInput](msgs(0).body) match {
+    val metadata: FFIDMetadataInput = decode[FFIDMetadataInput](msgs.head.body) match {
       case Right(metadata) => metadata
       case Left(error) => throw error
     }
@@ -80,7 +85,7 @@ class LambdaTest extends AnyFlatSpec with AWSSpec with FileSpec {
   "The update method" should "send the correct output if the path has spaces" in {
     new Lambda().process(createEvent("sns_ffid_path_with_space_event"), null)
     val msgs = outputQueueHelper.receive
-    val metadata: FFIDMetadataInput = decode[FFIDMetadataInput](msgs(0).body) match {
+    val metadata: FFIDMetadataInput = decode[FFIDMetadataInput](msgs.head.body) match {
       case Right(metadata) => metadata
       case Left(error) => throw error
     }
@@ -90,7 +95,7 @@ class LambdaTest extends AnyFlatSpec with AWSSpec with FileSpec {
   "The update method" should "send the correct output if the path has backticks" in {
     new Lambda().process(createEvent("sns_ffid_path_with_backtick_event"), null)
     val msgs = outputQueueHelper.receive
-    val metadata: FFIDMetadataInput = decode[FFIDMetadataInput](msgs(0).body) match {
+    val metadata: FFIDMetadataInput = decode[FFIDMetadataInput](msgs.head.body) match {
       case Right(metadata) => metadata
       case Left(error) => throw error
     }
