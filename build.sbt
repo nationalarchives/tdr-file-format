@@ -20,16 +20,11 @@ lazy val root = (project in file("."))
       circeCore,
       circeGeneric,
       circeParser,
-      awsUtils,
-      csvParser,
-      generatedGraphql,
       scalaLogging,
-      logback,
-      logstashLogbackEncoder,
       droidApi,
-      javaxCore,
-      javaxImpl,
-      javaxXml,
+      s3Sdk,
+      sqsSdk,
+      kmsSdk,
       scalaTest % Test,
       mockito % Test,
       elasticMq % Test,
@@ -46,6 +41,13 @@ lazy val root = (project in file("."))
   case PathList("META-INF", xs@_*) => MergeStrategy.discard
   case _ => MergeStrategy.first
 }
+
+(assemblyPackageDependency / assemblyMergeStrategy) := {
+  case PathList("META-INF", xs@_*) => MergeStrategy.discard
+  case _ => MergeStrategy.first
+}
+
+enablePlugins(PackPlugin)
 
 (assembly / assemblyJarName) := "file-format.jar"
 

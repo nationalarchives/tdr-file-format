@@ -1,28 +1,23 @@
 package uk.gov.nationalarchives.fileformat
 
-import net.logstash.logback.argument.StructuredArguments.value
 
-import java.io.File
-import java.util.UUID
 import com.typesafe.scalalogging.Logger
-import graphql.codegen.types.{FFIDMetadataInput, FFIDMetadataInputMatches}
+import io.circe.generic.auto._
 import io.circe.syntax._
-import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import software.amazon.awssdk.services.sqs.model.SendMessageResponse
-import uk.gov.nationalarchives.aws.utils.{S3Utils, SQSUtils}
-import uk.gov.nationalarchives.aws.utils.Clients.s3
 import uk.gov.nationalarchives.droid.internal.api.DroidAPI
 import uk.gov.nationalarchives.fileformat.FFIDExtractor._
 
 import java.nio.file.{Path, Paths}
+import java.util.UUID
 import scala.jdk.CollectionConverters._
 import scala.util.Try
 
-class FFIDExtractor(sqsUtils: SQSUtils, config: Map[String, String]) {
-  val sigPath: Path =  Paths.get("DROID_SignatureFile_V104.xml")
-  val containerPath: Path = Paths.get("container-signature-20220311.xml")
+class FFIDExtractor(awsUtils: AWSUtils, config: Map[String, String]) {
+  val sigPath: Path =  Paths.get(getClass.getResource("/DROID_SignatureFile_V104.xml").getPath)
+  val containerPath: Path = Paths.get(getClass.getResource("/container-signature-20220311.xml").getPath)
   val api: DroidAPI = DroidAPI.getInstance(sigPath, containerPath)
-  val sendMessage: String => SendMessageResponse = sqsUtils.send(config("sqs.queue.output"), _)
+  val sendMessage: String => SendMessageResponse = awsUtils.send(config("sqs.queue.output"), _)
   val logger: Logger = Logger[FFIDExtractor]
 
   def ffidFile(file: FFIDFile): Either[Throwable, FFIDMetadataInput] = {
@@ -36,24 +31,20 @@ class FFIDExtractor(sqsUtils: SQSUtils, config: Map[String, String]) {
 
       val matches = results.getResults.asScala.toList match {
         case Nil => List(FFIDMetadataInputMatches(None, "", None))
-        case results => results.map(res => FFIDMetadataInputMatches(Option(res.getExtId), res.getMethod.getMethod, Option(res.getPuid)))
+        case results =>
+          results.map(res => FFIDMetadataInputMatches(Option(res.getExtId), res.getMethod.getMethod, Option(res.getPuid)))
       }
 
       val metadataInput = FFIDMetadataInput(file.fileId, "Droid", droidVersion, droidSignatureVersion, containerSignatureVersion, "pronom", matches)
       println(metadataInput)
       sendMessage(metadataInput.asJson.noSpaces)
       logger.info(
-        "File metadata with {} matches found for file ID {} in consignment ID {}",
-        value("matchCount", matches.length),
-        value("fileId", file.fileId),
-        value("consignmentId", file.consignmentId)
+        s"File metadata with ${matches.length} matches found for file ID ${file.fileId} in consignment ID ${file.consignmentId}"
       )
       metadataInput
     }.toEither.left.map(err => {
       logger.error(
-        "Error processing file ID {}' in consignment ID {}",
-        value("fileId", file.fileId),
-        value("consignmentId", file.consignmentId)
+        s"Error processing file ID ${file.fileId}' in consignment ID ${file.consignmentId}"
       )
       new RuntimeException(s"Error processing file id ${file.fileId} with original path ${file.originalPath}", err)
     })
@@ -63,8 +54,10 @@ class FFIDExtractor(sqsUtils: SQSUtils, config: Map[String, String]) {
 object FFIDExtractor {
 
   case class FFIDFile(consignmentId: UUID, fileId: UUID, originalPath: String)
+  case class FFIDMetadataInput(fileId: UUID, software: String, softwareVersion: String, binarySignatureFileVersion: String, containerSignatureFileVersion: String, method: String, matches: List[FFIDMetadataInputMatches])
+  case class FFIDMetadataInputMatches(extension : Option[String], identificationBasis: String, puid: Option[String])
 
-  def apply(sqsUtils: SQSUtils, config: Map[String, String]): FFIDExtractor = new FFIDExtractor(sqsUtils, config)
+  def apply(sqsUtils: AWSUtils, config: Map[String, String]): FFIDExtractor = new FFIDExtractor(sqsUtils, config)
 }
 
 
