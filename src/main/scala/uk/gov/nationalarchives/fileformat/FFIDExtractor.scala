@@ -9,7 +9,7 @@ import uk.gov.nationalarchives.aws.utils.SQSUtils
 import uk.gov.nationalarchives.droid.internal.api.{ApiResult, DroidAPI}
 import uk.gov.nationalarchives.fileformat.FFIDExtractor._
 
-import java.io.InputStream
+import java.io.{File, InputStream}
 import java.net.URL
 import java.nio.file.{Files, Path, Paths, StandardCopyOption}
 import java.util.UUID
@@ -64,12 +64,16 @@ object FFIDExtractor {
     val containerSignatureVersion: String = configFactory.getString("signatures.container")
     val droidSignatureVersion: String = configFactory.getString("signatures.droid")
 
-    def downloadSignatureFiles(fileName: String): Try[Path] = {
+    def downloadSignatureFiles(fileName: String): Try[Path] = Try {
       val cdnUrl = configFactory.getString("signatures.cdn")
-      val in: InputStream = new URL(s"$cdnUrl/$fileName").openStream
-      Try {
-        val path = Paths.get(s"$rootDirectory/$fileName")
+      val path = Paths.get(s"$rootDirectory/$fileName")
+      val existingFile = new File(path.toString)
+      if(!existingFile.exists()) {
+        logger.debug("Downloading signature files")
+        val in: InputStream = new URL(s"$cdnUrl/$fileName").openStream
         Files.copy(in, path, StandardCopyOption.REPLACE_EXISTING)
+        path
+      } else {
         path
       }
     }
