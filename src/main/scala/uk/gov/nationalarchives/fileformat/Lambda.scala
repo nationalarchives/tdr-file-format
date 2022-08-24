@@ -8,7 +8,7 @@ import com.typesafe.scalalogging.Logger
 import io.circe.generic.auto._
 import io.circe.parser.decode
 import net.logstash.logback.argument.StructuredArguments.value
-import software.amazon.awssdk.services.sqs.model.{DeleteMessageResponse, SendMessageResponse}
+import software.amazon.awssdk.services.sqs.model.DeleteMessageResponse
 import uk.gov.nationalarchives.aws.utils.Clients.sqs
 import uk.gov.nationalarchives.aws.utils.SQSUtils
 import uk.gov.nationalarchives.fileformat.FFIDExtractor.FFIDFile
@@ -41,7 +41,7 @@ class Lambda {
   def decodeBody(record: SQSMessage): Either[FailedMessage, FFIDFileWithReceiptHandle] = {
     decode[FFIDFile](record.getBody)
       .left.map(e => FailedMessage(
-        s"Error extracting the file information from the incoming message ${record.getBody}",
+        s"Error extracting the file information from the incoming message ${record.getBody.trim}",
         e,
         record.getReceiptHandle)
       )
