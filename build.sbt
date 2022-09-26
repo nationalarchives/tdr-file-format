@@ -7,6 +7,7 @@ ThisBuild / organizationName := "example"
 
 resolvers ++= Seq[Resolver](
   "Sonatype Releases" at "https://dl.bintray.com/mockito/maven/",
+  "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
   Resolver.mavenLocal
 )
 
