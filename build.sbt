@@ -7,7 +7,6 @@ ThisBuild / organizationName := "example"
 
 resolvers ++= Seq[Resolver](
   "Sonatype Releases" at "https://dl.bintray.com/mockito/maven/",
-  "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
   Resolver.mavenLocal
 )
 
@@ -16,20 +15,16 @@ lazy val root = (project in file("."))
     name := "file-format",
     libraryDependencies ++= Seq(
       typesafe,
-      lambdaJavaCore,
-      lambdaJavaEvents,
       circeCore,
       circeGeneric,
       circeParser,
-      awsUtils,
+      droidCommandLine,
       csvParser,
       generatedGraphql,
       scalaLogging,
       logback,
       logstashLogbackEncoder,
-      droidApi,
-      javaxXml,
-      apacheCommons % Test,
+      awsS3,
       s3Mock % Test,
       scalaTest % Test,
       mockito % Test,

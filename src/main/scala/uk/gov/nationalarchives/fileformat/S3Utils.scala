@@ -4,10 +4,10 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.Logger
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.GetObjectRequest
-import uk.gov.nationalarchives.aws.utils.Clients.s3
 import uk.gov.nationalarchives.fileformat.FFIDExtractor.FFIDFile
 
 import java.io.File
+import java.net.URI
 import java.nio.file.Paths
 import scala.util.Try
 
@@ -41,6 +41,9 @@ class S3Utils(s3Client: S3Client, bucketName: String, rootDirectory: String) {
 object S3Utils {
   def apply(): S3Utils = {
     val configFactory = ConfigFactory.load
+    val s3 = S3Client.builder
+      .endpointOverride(URI.create(configFactory.getString("s3.endpoint")))
+      .build()
     new S3Utils(
       s3,
       configFactory.getString("s3.bucket"),
