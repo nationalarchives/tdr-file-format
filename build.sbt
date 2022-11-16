@@ -16,6 +16,7 @@ lazy val root = (project in file("."))
       typesafe,
       lambdaJavaCore,
       lambdaJavaEvents,
+      "uk.gov.nationalarchives" % "droid-command-line" % "6.5.2",
       circeCore,
       circeGeneric,
       circeParser,

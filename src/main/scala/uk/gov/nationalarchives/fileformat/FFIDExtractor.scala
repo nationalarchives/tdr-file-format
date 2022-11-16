@@ -15,31 +15,20 @@ import uk.gov.nationalarchives.fileformat.FFIDExtractor._
 import scala.sys.process._
 import scala.util.Try
 
-class FFIDExtractor(sqsUtils: SQSUtils, config: Map[String, String]) {
-  val sendMessage: String => SendMessageResponse = sqsUtils.send(config("sqs.queue.output"), _)
+class FFIDExtractor(droidCommandRunner: DroidCommandRunner, config: Map[String, String]) {
   val logger: Logger = Logger[FFIDExtractor]
 
   def ffidFile(file: FFIDFile): Either[Throwable, FFIDMetadataInput] = {
     Try {
-      val efsRootLocation = config("efs.root.location")
-      val command = s"$efsRootLocation/${config("command")}"
       //Outputs droid version to stdout
-      val droidVersion = s"$command -v".!!.split("\n")(1)
+      val droidVersion = droidCommandRunner.version
       //Outputs signature version to stdout
-      val signatureOutput = s"$command -x".!!.split("\n")
-      val containerSignatureVersion = signatureOutput(1).split(" ").last
-      val droidSignatureVersion = signatureOutput(2).split(" ").last
-      val consignmentPath = s"""$efsRootLocation/${file.consignmentId}"""
-      val pathWithQuotesReplaced = file.originalPath
-        .replaceAll(""""""", """\\\"""")
-        .replaceAll("`", "\\\\`")
-      val filePath = s""""$consignmentPath/$pathWithQuotesReplaced""""
-      //Adds the file to a profile and runs it. The output is a .droid profile file.
-      val droidCommand = s"""$command -a  $filePath -p $consignmentPath/${file.fileId}.droid"""
-      Seq("bash", "-c", droidCommand).!!
-      //Exports the profile as a csv
-      s"$command -p $consignmentPath/${file.fileId}.droid -E $consignmentPath/${file.fileId}.csv".!!
-      val reader = CSVReader.open(new File(s"$consignmentPath/${file.fileId}.csv"))
+      val signatureOutput = droidCommandRunner.signatureVersions
+      val consignmentPath = s"""/tmp/${file.consignmentId}"""
+      val filePath = s"$consignmentPath/${file.originalPath}"
+      val outputPrefix = s"$consignmentPath/${file.fileId}"
+      droidCommandRunner.createCSV(filePath, outputPrefix)
+      val reader = CSVReader.open(new File(s"$outputPrefix.csv"))
       implicit class OptFunction(str: String) {
         def toOpt: Option[String] = if (str.isEmpty) Option.empty else Some(str)
       }
@@ -53,9 +42,8 @@ class FFIDExtractor(sqsUtils: SQSUtils, config: Map[String, String]) {
       if(matches.isEmpty) {
         throw new RuntimeException(s"${file.fileId} with original path ${file.originalPath} has no matches")
       }
-      val metadataInput = FFIDMetadataInput(file.fileId, "Droid", droidVersion, droidSignatureVersion, containerSignatureVersion, "pronom", matches)
+      val metadataInput = FFIDMetadataInput(file.fileId, "Droid", droidVersion, signatureOutput.droidSignatureVersion, signatureOutput.containerSignatureVersion, "pronom", matches)
 
-      sendMessage(metadataInput.asJson.noSpaces)
       logger.info(
         "File metadata with {} matches found for file ID {} in consignment ID {}",
         value("matchCount", matches.length),
@@ -78,7 +66,7 @@ object FFIDExtractor {
 
   case class FFIDFile(consignmentId: UUID, fileId: UUID, originalPath: String)
 
-  def apply(sqsUtils: SQSUtils, config: Map[String, String]): FFIDExtractor = new FFIDExtractor(sqsUtils, config)
+  def apply(config: Map[String, String]): FFIDExtractor = new FFIDExtractor(DroidCommandRunner(), config)
 }
 
 
