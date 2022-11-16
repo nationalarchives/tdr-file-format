@@ -19,11 +19,12 @@ lazy val root = (project in file("."))
       circeGeneric,
       circeParser,
       droidCommandLine,
+      droidResults,
       csvParser,
+      javaxXml,
       generatedGraphql,
+      log4j,
       scalaLogging,
-      logback,
-      logstashLogbackEncoder,
       awsS3,
       s3Mock % Test,
       scalaTest % Test,
@@ -38,9 +39,25 @@ lazy val root = (project in file("."))
 (Test / javaOptions) += s"-Dconfig.file=${sourceDirectory.value}/test/resources/application.conf"
 (Test / envVars) := Map("AWS_ACCESS_KEY_ID" -> "accesskey", "AWS_SECRET_ACCESS_KEY" -> "secret")
 
-(assembly / assemblyMergeStrategy) := {
-  case PathList("META-INF", "MANIFEST.MF") => MergeStrategy.discard
+
+assembly / assemblyMergeStrategy := {
+  case PathList("META-INF", xs@_*) =>
+    xs map {
+      _.toLowerCase
+    } match {
+      case "services" :: _ => MergeStrategy.filterDistinctLines
+      case "spring.factories" :: _ => MergeStrategy.concat
+      case "spring.schemas" :: _ => MergeStrategy.concat
+      case "spring.handlers" :: _ => MergeStrategy.concat
+      case "spring-jpa.xml" :: _ => MergeStrategy.singleOrError
+      case "spring-results.xml" :: _ => MergeStrategy.singleOrError
+      case "ui-spring.xml" :: _ => MergeStrategy.singleOrError
+      case "spring-signature.xml" :: _ => MergeStrategy.singleOrError
+      case "report-spring.xml" :: _ => MergeStrategy.singleOrError
+      case "cxf" :: "bus-extensions.txt" :: _ => MergeStrategy.concat("\n\n\n")
+      case _ => MergeStrategy.discard
+    }
+  case "reference.conf" => MergeStrategy.concat
   case _ => MergeStrategy.first
 }
-
 (assembly / assemblyJarName) := "file-format.jar"

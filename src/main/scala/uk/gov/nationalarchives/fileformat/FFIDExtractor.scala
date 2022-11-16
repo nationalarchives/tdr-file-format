@@ -3,7 +3,6 @@ package uk.gov.nationalarchives.fileformat
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.Logger
 import graphql.codegen.types.{FFIDMetadataInput, FFIDMetadataInputMatches}
-import net.logstash.logback.argument.StructuredArguments.value
 import uk.gov.nationalarchives.fileformat.FFIDExtractor._
 
 import java.util.UUID
@@ -22,20 +21,10 @@ class FFIDExtractor(commandRunner: DroidCommandRunner, rootDirectory: String) {
 
         val metadataInput = FFIDMetadataInput(file.fileId, "Droid", droidVersion, droidSignatureVersion, containerSignatureVersion, "pronom", matches)
         println(metadataInput)
-        logger.info(
-          "File metadata with {} matches found for file ID {} in consignment ID {}",
-          value("matchCount", matches.length),
-          value("fileId", file.fileId),
-          value("consignmentId", file.consignmentId)
-        )
         metadataInput
       }
     .toEither.left.map(err => {
       err.printStackTrace()
-      logger.error(
-        "Error processing file ID {}' in consignment ID {}", value("fileId", file.fileId),
-        value("consignmentId", file.consignmentId)
-      )
       new RuntimeException(s"Error processing file id ${file.fileId} with original path ${file.originalPath}", err)
     })
   }

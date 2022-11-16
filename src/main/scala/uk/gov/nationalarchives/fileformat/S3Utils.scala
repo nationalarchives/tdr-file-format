@@ -2,6 +2,7 @@ package uk.gov.nationalarchives.fileformat
 
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.Logger
+import software.amazon.awssdk.http.apache.ApacheHttpClient
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import uk.gov.nationalarchives.fileformat.FFIDExtractor.FFIDFile
@@ -41,7 +42,9 @@ class S3Utils(s3Client: S3Client, bucketName: String, rootDirectory: String) {
 object S3Utils {
   def apply(): S3Utils = {
     val configFactory = ConfigFactory.load
+    val httpClient = ApacheHttpClient.builder().build()
     val s3 = S3Client.builder
+      .httpClient(httpClient)
       .endpointOverride(URI.create(configFactory.getString("s3.endpoint")))
       .build()
     new S3Utils(
