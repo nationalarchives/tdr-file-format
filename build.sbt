@@ -37,7 +37,7 @@ lazy val root = (project in file("."))
 
 (Test / fork) := true
 (Test / javaOptions) += s"-Dconfig.file=${sourceDirectory.value}/test/resources/application.conf"
-(Test / envVars) := Map("AWS_ACCESS_KEY_ID" -> "accesskey", "AWS_SECRET_ACCESS_KEY" -> "secret")
+(Test / envVars) := Map("AWS_ACCESS_KEY_ID" -> "accesskey", "AWS_SECRET_ACCESS_KEY" -> "secret", "AWS_REGION" -> "eu-west-2")
 
 
 assembly / assemblyMergeStrategy := {
