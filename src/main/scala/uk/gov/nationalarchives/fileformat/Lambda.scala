@@ -11,8 +11,10 @@ import io.circe.generic.semiauto.deriveDecoder
 import io.circe.parser.decode
 import net.logstash.logback.argument.StructuredArguments.value
 import software.amazon.awssdk.services.sqs.model.{DeleteMessageResponse, SendMessageResponse}
-import uk.gov.nationalarchives.aws.utils.Clients.{kms, sqs}
-import uk.gov.nationalarchives.aws.utils.{KMSUtils, SQSUtils}
+import uk.gov.nationalarchives.aws.utils.kms.KMSClients.kms
+import uk.gov.nationalarchives.aws.utils.sqs.SQSClients.sqs
+import uk.gov.nationalarchives.aws.utils.kms.KMSUtils
+import uk.gov.nationalarchives.aws.utils.sqs.SQSUtils
 import uk.gov.nationalarchives.fileformat.FFIDExtractor.FFIDFile
 
 import java.time.Instant
@@ -25,11 +27,10 @@ class Lambda {
 
   val configFactory: Config = ConfigFactory.load
   val kmsUtils: KMSUtils = KMSUtils(kms(configFactory.getString("kms.endpoint")), Map("LambdaFunctionName" -> configFactory.getString("function.name")))
-  val lambdaConfig: Map[String, String] = kmsUtils.decryptValuesFromConfig(
-    List("sqs.queue.input", "sqs.queue.output", "efs.root.location", "command")
-  )
+  val lambdaConfig: Map[String, String] = List("sqs.queue.input", "sqs.queue.output", "efs.root.location", "command")
+    .map(configName => configName -> kmsUtils.decryptValue(configFactory.getString(configName))).toMap
 
-  val sqsUtils: SQSUtils = SQSUtils(sqs)
+  val sqsUtils: SQSUtils = SQSUtils(sqs(configFactory.getString("sqs.endpoint")))
 
   val inputQueueUrl: String = lambdaConfig("sqs.queue.input")
   val deleteMessage: String => DeleteMessageResponse = sqsUtils.delete(inputQueueUrl, _)
