@@ -9,7 +9,7 @@ import com.typesafe.scalalogging.Logger
 import graphql.codegen.types.{FFIDMetadataInput, FFIDMetadataInputMatches}
 import io.circe.syntax._
 import software.amazon.awssdk.services.sqs.model.SendMessageResponse
-import uk.gov.nationalarchives.aws.utils.SQSUtils
+import uk.gov.nationalarchives.aws.utils.sqs.SQSUtils
 import uk.gov.nationalarchives.fileformat.FFIDExtractor._
 
 import scala.sys.process._
