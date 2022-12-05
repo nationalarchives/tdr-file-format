@@ -6,7 +6,7 @@ import java.util.UUID
 
 import com.github.tototoshi.csv.CSVReader
 import com.typesafe.scalalogging.Logger
-import graphql.codegen.types.{FFIDMetadataInput, FFIDMetadataInputMatches}
+import graphql.codegen.types.{FFIDMetadataInputMatches, FFIDMetadataInputValues}
 import io.circe.syntax._
 import software.amazon.awssdk.services.sqs.model.SendMessageResponse
 import uk.gov.nationalarchives.aws.utils.sqs.SQSUtils
@@ -19,7 +19,7 @@ class FFIDExtractor(sqsUtils: SQSUtils, config: Map[String, String]) {
   val sendMessage: String => SendMessageResponse = sqsUtils.send(config("sqs.queue.output"), _)
   val logger: Logger = Logger[FFIDExtractor]
 
-  def ffidFile(file: FFIDFile): Either[Throwable, FFIDMetadataInput] = {
+  def ffidFile(file: FFIDFile): Either[Throwable, FFIDMetadataInputValues] = {
     Try {
       val efsRootLocation = config("efs.root.location")
       val command = s"$efsRootLocation/${config("command")}"
@@ -53,7 +53,7 @@ class FFIDExtractor(sqsUtils: SQSUtils, config: Map[String, String]) {
       if(matches.isEmpty) {
         throw new RuntimeException(s"${file.fileId} with original path ${file.originalPath} has no matches")
       }
-      val metadataInput = FFIDMetadataInput(file.fileId, "Droid", droidVersion, droidSignatureVersion, containerSignatureVersion, "pronom", matches)
+      val metadataInput = FFIDMetadataInputValues(file.fileId, "Droid", droidVersion, droidSignatureVersion, containerSignatureVersion, "pronom", matches)
 
       sendMessage(metadataInput.asJson.noSpaces)
       logger.info(

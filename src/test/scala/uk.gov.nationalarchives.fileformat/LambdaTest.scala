@@ -2,7 +2,7 @@ package uk.gov.nationalarchives.fileformat
 
 import java.util.UUID
 
-import graphql.codegen.types.FFIDMetadataInput
+import graphql.codegen.types.FFIDMetadataInputValues
 import io.circe.parser.decode
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers.{equal, _}
@@ -70,7 +70,7 @@ class LambdaTest extends AnyFlatSpec with AWSSpec with FileSpec {
   "The update method" should "send the correct output to the queue" in {
     new Lambda().process(createEvent("sns_ffid_event"), null)
     val msgs = outputQueueHelper.receive
-    val metadata: FFIDMetadataInput = decode[FFIDMetadataInput](msgs(0).body) match {
+    val metadata: FFIDMetadataInputValues = decode[FFIDMetadataInputValues](msgs(0).body) match {
       case Right(metadata) => metadata
       case Left(error) => throw error
     }
@@ -80,7 +80,7 @@ class LambdaTest extends AnyFlatSpec with AWSSpec with FileSpec {
   "The update method" should "send the correct output if the path has spaces" in {
     new Lambda().process(createEvent("sns_ffid_path_with_space_event"), null)
     val msgs = outputQueueHelper.receive
-    val metadata: FFIDMetadataInput = decode[FFIDMetadataInput](msgs(0).body) match {
+    val metadata: FFIDMetadataInputValues = decode[FFIDMetadataInputValues](msgs(0).body) match {
       case Right(metadata) => metadata
       case Left(error) => throw error
     }
@@ -90,7 +90,7 @@ class LambdaTest extends AnyFlatSpec with AWSSpec with FileSpec {
   "The update method" should "send the correct output if the path has backticks" in {
     new Lambda().process(createEvent("sns_ffid_path_with_backtick_event"), null)
     val msgs = outputQueueHelper.receive
-    val metadata: FFIDMetadataInput = decode[FFIDMetadataInput](msgs(0).body) match {
+    val metadata: FFIDMetadataInputValues = decode[FFIDMetadataInputValues](msgs(0).body) match {
       case Right(metadata) => metadata
       case Left(error) => throw error
     }
