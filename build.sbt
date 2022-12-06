@@ -7,7 +7,6 @@ ThisBuild / organizationName := "example"
 
 resolvers ++= Seq[Resolver](
   "Sonatype Releases" at "https://dl.bintray.com/mockito/maven/",
-  "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
   Resolver.mavenLocal
 )
 
@@ -21,7 +20,7 @@ lazy val root = (project in file("."))
       circeCore,
       circeGeneric,
       circeParser,
-      awsUtils,
+      s3Utils,
       csvParser,
       generatedGraphql,
       scalaLogging,
@@ -30,11 +29,8 @@ lazy val root = (project in file("."))
       droidApi,
       javaxXml,
       apacheCommons % Test,
-      s3Mock % Test,
       scalaTest % Test,
       mockito % Test,
-      elasticMq % Test,
-      elasticMqSqs % Test,
       wiremock % Test
     )
   )

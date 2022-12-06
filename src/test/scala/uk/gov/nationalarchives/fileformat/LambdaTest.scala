@@ -1,104 +1,145 @@
 package uk.gov.nationalarchives.fileformat
 
+import com.github.tomakehurst.wiremock.WireMockServer
+import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, anyUrl, get, okXml, urlEqualTo}
 import graphql.codegen.types.FFIDMetadataInput
+import io.circe.{DecodingFailure, Printer}
+import io.circe.generic.auto._
 import io.circe.parser.decode
+import io.circe.syntax._
+import org.apache.commons.io.output.ByteArrayOutputStream
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers.{equal, _}
-import uk.gov.nationalarchives.fileformat.AWSUtils._
+import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor1, TableFor2}
+import uk.gov.nationalarchives.fileformat.FFIDExtractor.FFIDFile
 
-import java.util.UUID
+import java.io.{ByteArrayInputStream, File}
+import java.nio.file.{Files, Paths}
+import scala.io.Source.{fromFile, fromResource}
+import scala.reflect.io.Directory
+import scala.util.{Failure, Success, Using}
 
-class LambdaTest extends AnyFlatSpec with AWSSpec with FileSpec {
+class LambdaTest extends AnyFlatSpec with BeforeAndAfterEach with BeforeAndAfterAll with TableDrivenPropertyChecks {
+  val wiremockS3 = new WireMockServer(8003)
+
+  def getFile(filePath: String): String = {
+    Using(fromFile(filePath)) { file => file.mkString } match {
+      case Failure(exception) => throw exception
+      case Success(value) => value
+    }
+  }
+
+  def tnaCdn: WireMockServer = {
+    val tnaCdn = new WireMockServer(9002)
+    val path = "./src/test/resources/containers"
+    tnaCdn.stubFor(get(urlEqualTo("/DROID_SignatureFile_1.xml"))
+      .willReturn(okXml(getFile(s"$path/droid_signatures.xml"))))
+    tnaCdn.stubFor(get(urlEqualTo("/container-signature-1.xml"))
+      .willReturn(okXml(getFile(s"$path/container_signatures.xml"))))
+    tnaCdn
+  }
 
   override def beforeAll(): Unit = {
-    createS3Mock()
     tnaCdn.start()
   }
 
-  "The update method" should "put a message in the output queue if the message is successful" in {
-    new Lambda().process(createEvent("sns_ffid_event"), null)
-    outputQueueHelper.availableMessageCount should equal(1)
+  override def afterAll(): Unit = {
+    tnaCdn.stop()
   }
 
-  "The update method" should "reset the visibility of a message which fails the parsing step so it can be retried" in {
-    intercept[RuntimeException] {
-      new Lambda().process(createEvent("sns_ffid_invalid_consignment_id"), null)
+  override def beforeEach(): Unit = {
+    val testFilesPath = "./src/test/resources/testfiles"
+    new File(s"$testFilesPath/running-files").mkdir()
+    wiremockS3.start()
+  }
+
+  override def afterEach(): Unit = {
+    new File("${sys:logFile}").delete()
+    new File("derby.log").delete()
+    val runningFiles = new File(s"./src/test/resources/testfiles/running-files/")
+    if(runningFiles.exists()) {
+      new Directory(runningFiles).deleteRecursively()
     }
-
-    inputQueueHelper.availableMessageCount should equal(1)
+    wiremockS3.stop()
   }
 
-  "The update method" should "reset the visibility of a message which fails the FFID process so it can be retried" in {
-    intercept[RuntimeException] {
-      new Lambda().process(createEvent("sns_ffid_missing_file"), null)
+  def mockFileDownload(ffidFile: FFIDFile, fileName: String) = {
+    val filePath = s"./src/test/resources/testfiles/$fileName"
+    val bytes = Files.readAllBytes(Paths.get(filePath))
+    wiremockS3.stubFor(get(urlEqualTo(s"/${ffidFile.userId}/${ffidFile.consignmentId}/${ffidFile.fileId}"))
+      .willReturn(aResponse().withStatus(200).withBody(bytes))
+    )
+  }
+
+  def mockS3Error() = {
+    wiremockS3.stubFor(get(anyUrl())
+      .willReturn(aResponse().withStatus(404))
+    )
+  }
+
+  def decodeInputJson(fileName: String): FFIDFile = decode[FFIDFile](fromResource(s"json/$fileName.json").mkString) match {
+    case Left(err) => throw err
+    case Right(value) => value
+  }
+
+  def createEvent(ffidFile: FFIDFile) = new ByteArrayInputStream(ffidFile.asJson.printWith(Printer.noSpaces).getBytes())
+
+  def decodeOutput(outputStream: ByteArrayOutputStream): FFIDMetadataInput = decode[FFIDMetadataInput](outputStream.toByteArray.map(_.toChar).mkString) match {
+    case Left(err) => throw err
+    case Right(value) => value
+  }
+
+  def testValidFileFormatEvent(eventName: String, fileName: String, expectedPuids: List[String]): Unit = {
+    val ffidFile = decodeInputJson(eventName)
+    val fileWithReplacedSuffix = ffidFile.copy(originalPath = ffidFile.originalPath.replace("{suffix}", fileName.split("\\.").last))
+    mockFileDownload(fileWithReplacedSuffix, fileName)
+    val outputStream = new ByteArrayOutputStream()
+    new Lambda().process(createEvent(fileWithReplacedSuffix), outputStream)
+    val decodedOutput = decodeOutput(outputStream)
+    decodedOutput.matches.size should equal(expectedPuids.size)
+    expectedPuids.foreach(puid => {
+      decodedOutput.matches.exists(_.puid == Option(puid)) should equal(true)
+    })
+  }
+
+  "The process method" should "return an error if the consignment id is invalid" in {
+    val exception = intercept[DecodingFailure] {
+      new Lambda().process(createEvent(decodeInputJson("ffid_invalid_consignment_id")), null)
     }
-
-    inputQueueHelper.availableMessageCount should equal(1)
+    exception.getMessage should equal("Got value '\"1\"' with wrong type, expecting string: DownField(consignmentId)")
   }
 
-  "The update method" should "put one message in the output queue, delete the successful message and leave the error messages" in {
-    intercept[RuntimeException] {
-      new Lambda().process(createEvent("sns_ffid_missing_file", "sns_ffid_event", "sns_ffid_invalid_consignment_id"), null)
-    }
-
-    outputQueueHelper.availableMessageCount should equal(1)
-    inputQueueHelper.availableMessageCount should equal(2)
-    inputQueueHelper.notVisibleMessageCount should equal(0)
-  }
-
-  "The update method" should "return the receipt handle for a successful message" in {
-    val event = createEvent("sns_ffid_event")
-    val originalReceiptHandle = event.getRecords.get(0).getReceiptHandle
-
-    val response = new Lambda().process(event, null)
-
-    response.head should equal(originalReceiptHandle)
-  }
-
-  "The update method" should "return the receipt handle for a successful message for a file in a nested directory" in {
-    val event = createEvent("sns_ffid_nested_directory_event")
-    val originalReceiptHandle = event.getRecords.get(0).getReceiptHandle
-
-    val response = new Lambda().process(event, null)
-
-    response.head should equal(originalReceiptHandle)
-  }
-
-  "The update method" should "throw an exception for an invalid consignment id error" in {
-    val event = createEvent("sns_ffid_invalid_consignment_id")
+  "The process method" should "return an error if the file id is missing" in {
+    mockS3Error()
     val exception = intercept[RuntimeException] {
-      new Lambda().process(event, null)
+      new Lambda().process(createEvent(decodeInputJson("ffid_missing_file")), null)
     }
-    exception.getMessage should equal("""Error extracting the file information from the incoming message {"consignmentId":  "1", "fileId":  "acea5919-25a3-4c6b-8908-fa47cc77878f", "originalPath" :  "originalPath", "userId":  "9a5f9f7e-0e1d-4bc6-8c81-a7d305acf324"}""")
+    exception.getMessage should equal("null (Service: S3, Status Code: 404, Request ID: null)")
   }
 
-  "The update method" should "send the correct output to the queue" in {
-    new Lambda().process(createEvent("sns_ffid_event"), null)
-    val msgs = outputQueueHelper.receive
-    val metadata: FFIDMetadataInput = decode[FFIDMetadataInput](msgs.head.body) match {
-      case Right(metadata) => metadata
-      case Left(error) => throw error
-    }
-    metadata.fileId should equal(UUID.fromString("acea5919-25a3-4c6b-8908-fa47cc77878f"))
-  }
+  val testFiles: TableFor2[String, List[String]] = Table(
+    ("FileName","ExpectedPuids"),
+    ("Test.docx", List("fmt/412")),
+    ("Test.xlsx", List("fmt/214")),
+    ("Test.pdf", List("fmt/276"))
+  )
 
-  "The update method" should "send the correct output if the path has spaces" in {
-    new Lambda().process(createEvent("sns_ffid_path_with_space_event"), null)
-    val msgs = outputQueueHelper.receive
-    val metadata: FFIDMetadataInput = decode[FFIDMetadataInput](msgs.head.body) match {
-      case Right(metadata) => metadata
-      case Left(error) => throw error
+  forAll(testFiles) { (fileName, expectedPuids) =>
+    "The process method" should s"put return the correct format for $fileName" in {
+      testValidFileFormatEvent("ffid_event", fileName, expectedPuids)
     }
-    metadata.fileId should equal(UUID.fromString("acea5919-25a3-4c6b-8908-fa47cc77878f"))
-  }
 
-  "The update method" should "send the correct output if the path has backticks" in {
-    new Lambda().process(createEvent("sns_ffid_path_with_backtick_event"), null)
-    val msgs = outputQueueHelper.receive
-    val metadata: FFIDMetadataInput = decode[FFIDMetadataInput](msgs.head.body) match {
-      case Right(metadata) => metadata
-      case Left(error) => throw error
+    "The process method" should s"return the correct format for a nested directory for $fileName" in {
+      testValidFileFormatEvent("ffid_nested_directory_event", fileName, expectedPuids)
     }
-    metadata.fileId should equal(UUID.fromString("acea5919-25a3-4c6b-8908-fa47cc77878f"))
+
+    "The process method" should s"return the correct format for a file with a backtick for $fileName" in {
+      testValidFileFormatEvent("ffid_path_with_backtick_event", fileName, expectedPuids)
+    }
+
+    "The process method" should s"return the correct format for a file with a space for $fileName" in {
+      testValidFileFormatEvent("ffid_path_with_space_event", fileName, expectedPuids)
+    }
   }
 }

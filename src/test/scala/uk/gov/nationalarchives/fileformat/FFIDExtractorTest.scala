@@ -5,7 +5,6 @@ import org.mockito.MockitoSugar
 import org.scalatest.EitherValues
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers._
-import uk.gov.nationalarchives.aws.utils.SQSUtils
 import uk.gov.nationalarchives.droid.core.interfaces.IdentificationMethod
 import uk.gov.nationalarchives.droid.internal.api.{ApiResult, DroidAPI}
 import uk.gov.nationalarchives.fileformat.FFIDExtractor.FFIDFile
@@ -28,7 +27,7 @@ class FFIDExtractorTest extends AnyFlatSpec with MockitoSugar with EitherValues 
     when(mockApi.getBinarySignatureVersion).thenReturn(testBinarySignatureVersion)
     when(mockApi.getContainerSignatureVersion).thenReturn(testContainerSignatureVersion)
 
-    val result = new FFIDExtractor(sqsUtils, mockApi, rootDirectory).ffidFile(ffidFile)
+    val result = new FFIDExtractor(mockApi, rootDirectory).ffidFile(ffidFile)
 
     val ffid = result.right.value
     ffid.softwareVersion should equal(testDroidVersion)
@@ -41,7 +40,7 @@ class FFIDExtractorTest extends AnyFlatSpec with MockitoSugar with EitherValues 
     val mockResult = new ApiResult(null, IdentificationMethod.EXTENSION, null, "testName")
     when(api.submit(any[Path])).thenReturn(List(mockResult).asJava)
 
-    val result = new FFIDExtractor(sqsUtils, api, rootDirectory).ffidFile(ffidFile)
+    val result = new FFIDExtractor(api, rootDirectory).ffidFile(ffidFile)
     val ffid = result.right.value
     val m = ffid.matches.head
     m.extension.isEmpty should be(true)
@@ -57,7 +56,7 @@ class FFIDExtractorTest extends AnyFlatSpec with MockitoSugar with EitherValues 
 
     when(api.submit(any[Path])).thenReturn(apiResults.asJava)
 
-    val result = new FFIDExtractor(sqsUtils, api, rootDirectory).ffidFile(ffidFile)
+    val result = new FFIDExtractor(api, rootDirectory).ffidFile(ffidFile)
     val ffid = result.right.value
     ffid.matches.size should equal(3)
   }
@@ -66,7 +65,7 @@ class FFIDExtractorTest extends AnyFlatSpec with MockitoSugar with EitherValues 
     val api = mock[DroidAPI]
     when(api.submit(any[Path])).thenThrow(new Exception("Droid error processing files"))
     val file = ffidFile
-    val result = new FFIDExtractor(sqsUtils, api, rootDirectory).ffidFile(file)
+    val result = new FFIDExtractor(api, rootDirectory).ffidFile(file)
     result.left.value.getMessage should equal(s"Error processing file id ${file.fileId} with original path originalPath")
     result.left.value.getCause.getMessage should equal("Droid error processing files")
   }
@@ -75,11 +74,10 @@ class FFIDExtractorTest extends AnyFlatSpec with MockitoSugar with EitherValues 
     val api = mock[DroidAPI]
     when(api.submit(any[Path])).thenReturn(List().asJava)
 
-    val result = new FFIDExtractor(sqsUtils, api, rootDirectory).ffidFile(ffidFileWithQuote)
+    val result = new FFIDExtractor(api, rootDirectory).ffidFile(ffidFileWithQuote)
     result.isRight should be (true)
   }
 
-  def sqsUtils: SQSUtils = mock[SQSUtils]
   val userId: UUID = UUID.randomUUID()
   def ffidFile: FFIDFile = FFIDFile(UUID.randomUUID(), UUID.randomUUID(), "originalPath", userId)
   def ffidFileWithQuote: FFIDFile = FFIDFile(UUID.randomUUID(), UUID.randomUUID(), """rootDirectory/originalPath"withQu'ote""", userId)

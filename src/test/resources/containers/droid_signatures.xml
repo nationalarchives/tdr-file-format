@@ -10,5 +10,14 @@
     <FileFormat ID="163" MIMEType="text/plain" Name="Plain Text File" PUID="x-fmt/111">
       <Extension>txt</Extension>
     </FileFormat>
+    <FileFormat ID="1160" MIMEType="application/vnd.openxmlformats-officedocument.wordprocessingml.document" Name="Microsoft Word for Windows" PUID="fmt/412" Version="2007 onwards">
+      <Extension>docx</Extension>
+    </FileFormat>
+    <FileFormat ID="940" MIMEType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" Name="Microsoft Excel for Windows" PUID="fmt/214" Version="2007 onwards">
+      <Extension>xlsx</Extension>
+    </FileFormat>
+    <FileFormat ID="1016" MIMEType="application/pdf" Name="Acrobat PDF 1.7 - Portable Document Format" PUID="fmt/276" Version="1.7">
+      <Extension>pdf</Extension>
+    </FileFormat>
   </FileFormatCollection>
 </FFSignatureFile>

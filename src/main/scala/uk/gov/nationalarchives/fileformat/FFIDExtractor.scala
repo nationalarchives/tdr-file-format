@@ -3,9 +3,7 @@ package uk.gov.nationalarchives.fileformat
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.Logger
 import graphql.codegen.types.{FFIDMetadataInput, FFIDMetadataInputMatches}
-import io.circe.syntax._
 import net.logstash.logback.argument.StructuredArguments.value
-import uk.gov.nationalarchives.aws.utils.SQSUtils
 import uk.gov.nationalarchives.droid.internal.api.{ApiResult, DroidAPI}
 import uk.gov.nationalarchives.fileformat.FFIDExtractor._
 
@@ -16,7 +14,7 @@ import java.util.UUID
 import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Try}
 
-class FFIDExtractor(sqsUtils: SQSUtils, api: DroidAPI, rootDirectory: String) {
+class FFIDExtractor(api: DroidAPI, rootDirectory: String) {
 
   def ffidFile(file: FFIDFile): Either[Throwable, FFIDMetadataInput] = {
       Try {
@@ -32,8 +30,7 @@ class FFIDExtractor(sqsUtils: SQSUtils, api: DroidAPI, rootDirectory: String) {
         }
 
         val metadataInput = FFIDMetadataInput(file.fileId, "Droid", droidVersion, droidSignatureVersion, containerSignatureVersion, "pronom", matches)
-        println(metadataInput)
-        sqsUtils.send(configFactory.getString("sqs.queue.output"), metadataInput.asJson.noSpaces)
+
         logger.info(
           "File metadata with {} matches found for file ID {} in consignment ID {}",
           value("matchCount", matches.length),
@@ -59,7 +56,7 @@ object FFIDExtractor {
   val logger: Logger = Logger[FFIDExtractor]
 
 
-  def apply(sqsUtils: SQSUtils): FFIDExtractor = {
+  def apply(): FFIDExtractor = {
     val rootDirectory: String = configFactory.getString("root.directory")
     val containerSignatureVersion: String = configFactory.getString("signatures.container")
     val droidSignatureVersion: String = configFactory.getString("signatures.droid")
@@ -89,6 +86,6 @@ object FFIDExtractor {
       case Success(api) => api
     }
 
-    new FFIDExtractor(sqsUtils, api, rootDirectory)
+    new FFIDExtractor(api, rootDirectory)
   }
 }

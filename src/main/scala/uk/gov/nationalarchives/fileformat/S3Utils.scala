@@ -4,7 +4,7 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.Logger
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.GetObjectRequest
-import uk.gov.nationalarchives.aws.utils.Clients.s3
+import uk.gov.nationalarchives.aws.utils.s3.S3Clients.s3
 import uk.gov.nationalarchives.fileformat.FFIDExtractor.FFIDFile
 
 import java.io.File
@@ -42,7 +42,7 @@ object S3Utils {
   def apply(): S3Utils = {
     val configFactory = ConfigFactory.load
     new S3Utils(
-      s3,
+      s3(configFactory.getString("s3.endpoint")),
       configFactory.getString("s3.bucket"),
       configFactory.getString("root.directory")
     )
