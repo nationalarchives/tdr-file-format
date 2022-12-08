@@ -13,6 +13,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers.{equal, _}
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor1, TableFor2}
 import uk.gov.nationalarchives.fileformat.FFIDExtractor.FFIDFile
+import uk.gov.nationalarchives.fileformat.Lambda.FFIDResult
 
 import java.io.{ByteArrayInputStream, File}
 import java.nio.file.{Files, Paths}
@@ -85,9 +86,9 @@ class LambdaTest extends AnyFlatSpec with BeforeAndAfterEach with BeforeAndAfter
 
   def createEvent(ffidFile: FFIDFile) = new ByteArrayInputStream(ffidFile.asJson.printWith(Printer.noSpaces).getBytes())
 
-  def decodeOutput(outputStream: ByteArrayOutputStream): FFIDMetadataInput = decode[FFIDMetadataInput](outputStream.toByteArray.map(_.toChar).mkString) match {
+  def decodeOutput(outputStream: ByteArrayOutputStream): FFIDMetadataInput = decode[FFIDResult](outputStream.toByteArray.map(_.toChar).mkString) match {
     case Left(err) => throw err
-    case Right(value) => value
+    case Right(value) => value.fileFormat
   }
 
   def testValidFileFormatEvent(eventName: String, fileName: String, expectedPuids: List[String]): Unit = {
