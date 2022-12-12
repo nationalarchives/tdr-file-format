@@ -17,7 +17,7 @@ jobs:
   deploy:
     uses: nationalarchives/tdr-github-actions/.github/workflows/lambda_deploy.yml@main
     with:
-      lambda-name: file-format
+      lambda-name: file-format-v2
       deployment-package: file-format.jar
       environment: ${{ github.event.inputs.environment }}
       to-deploy: ${{ github.event.inputs.to-deploy }}
