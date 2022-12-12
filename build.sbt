@@ -15,8 +15,6 @@ lazy val root = (project in file("."))
     name := "file-format",
     libraryDependencies ++= Seq(
       typesafe,
-      lambdaJavaCore,
-      lambdaJavaEvents,
       circeCore,
       circeGeneric,
       circeParser,

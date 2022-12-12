@@ -21,6 +21,7 @@ Droid is contained within the `"uk.gov.nationalarchives" % "droid-api"` dependen
 The binary and container signature files are downloaded when the lambda is first started. 
 The versions of the signature files are stored in the `DROID_SIGNATURE_VERSION` and `CONTAINER_SIGNATURE_VERSION` environment variables. 
 To update to a new version of these signature files, we need to update the values in the environment variables.
+Getting updates for the signature files is currently a manual process. There is a full list of files [available here](https://www.nationalarchives.gov.uk/aboutapps/pronom/droid-signature-files.htm).
 
 ### File format Lambda
 

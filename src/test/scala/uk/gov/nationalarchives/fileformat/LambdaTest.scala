@@ -10,7 +10,7 @@ import io.circe.syntax._
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers.{equal, _}
-import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor1, TableFor2}
+import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor2}
 import uk.gov.nationalarchives.fileformat.FFIDExtractor.FFIDFile
 import uk.gov.nationalarchives.fileformat.Lambda.FFIDResult
 
