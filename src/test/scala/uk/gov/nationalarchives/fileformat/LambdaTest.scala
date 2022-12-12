@@ -7,7 +7,6 @@ import io.circe.{DecodingFailure, Printer}
 import io.circe.generic.auto._
 import io.circe.parser.decode
 import io.circe.syntax._
-import org.apache.commons.io.output.ByteArrayOutputStream
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers.{equal, _}
@@ -15,7 +14,7 @@ import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor1, TableFor2}
 import uk.gov.nationalarchives.fileformat.FFIDExtractor.FFIDFile
 import uk.gov.nationalarchives.fileformat.Lambda.FFIDResult
 
-import java.io.{ByteArrayInputStream, File}
+import java.io.{ByteArrayInputStream, ByteArrayOutputStream, File}
 import java.nio.file.{Files, Paths}
 import scala.io.Source.{fromFile, fromResource}
 import scala.reflect.io.Directory

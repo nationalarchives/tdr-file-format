@@ -22,6 +22,6 @@ object Dependencies {
   lazy val apacheCommons = "org.apache.commons" % "commons-lang3" % "3.12.0"
   lazy val droidApi = "uk.gov.nationalarchives" % "droid-api" % "6.6.0-rc2"
   // This is an older version of this dependency but the newer version won't work with Droid without some major changes.
-  // I'll configure Scala Steward to ignore it.
+  // Scala Steward configured to ignore it.
   lazy val javaxXml =  "org.glassfish.jaxb" % "jaxb-runtime" % "2.3.1"
 }
