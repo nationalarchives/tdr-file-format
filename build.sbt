@@ -6,7 +6,8 @@ ThisBuild / organization := "com.example"
 ThisBuild / organizationName := "example"
 
 resolvers ++= Seq[Resolver](
-  "Sonatype Releases" at "https://dl.bintray.com/mockito/maven/"
+  "Sonatype Releases" at "https://dl.bintray.com/mockito/maven/",
+  Resolver.mavenLocal
 )
 
 lazy val root = (project in file("."))
@@ -14,22 +15,20 @@ lazy val root = (project in file("."))
     name := "file-format",
     libraryDependencies ++= Seq(
       typesafe,
-      lambdaJavaCore,
-      lambdaJavaEvents,
       circeCore,
       circeGeneric,
       circeParser,
-      kmsUtils,
-      sqsUtils,
+      s3Utils,
       csvParser,
       generatedGraphql,
       scalaLogging,
       logback,
       logstashLogbackEncoder,
+      droidApi,
+      javaxXml,
+      apacheCommons % Test,
       scalaTest % Test,
       mockito % Test,
-      elasticMq % Test,
-      elasticMqSqs % Test,
       wiremock % Test
     )
   )
@@ -39,12 +38,8 @@ lazy val root = (project in file("."))
 (Test / envVars) := Map("AWS_ACCESS_KEY_ID" -> "accesskey", "AWS_SECRET_ACCESS_KEY" -> "secret")
 
 (assembly / assemblyMergeStrategy) := {
-  case PathList("META-INF", xs@_*) => MergeStrategy.discard
+  case PathList("META-INF", "MANIFEST.MF") => MergeStrategy.discard
   case _ => MergeStrategy.first
 }
 
 (assembly / assemblyJarName) := "file-format.jar"
-
-
-
-// See https://www.scala-sbt.org/1.x/docs/Using-Sonatype.html for instructions on how to publish to Sonatype.
