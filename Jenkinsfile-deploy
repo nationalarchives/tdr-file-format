@@ -1,8 +1,0 @@
-library("tdr-jenkinslib")
-
-deployToLambda(
-  stage: params.STAGE,
-  libraryName: "file-format",
-  version: params.TO_DEPLOY,
-  deploymentPackageName: "file-format.jar"
-)
