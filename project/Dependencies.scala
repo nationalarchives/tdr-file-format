@@ -21,5 +21,5 @@ object Dependencies {
   lazy val droidApi = "uk.gov.nationalarchives" % "droid-api" % "6.6.0-rc2"
   // This is an older version of this dependency but the newer version won't work with Droid without some major changes.
   // Scala Steward configured to ignore it.
-  lazy val javaxXml =  "org.glassfish.jaxb" % "jaxb-runtime" % "2.3.7"
+  lazy val javaxXml =  "org.glassfish.jaxb" % "jaxb-runtime" % "4.0.1"
 }
