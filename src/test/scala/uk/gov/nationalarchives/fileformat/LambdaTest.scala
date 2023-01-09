@@ -2,7 +2,7 @@ package uk.gov.nationalarchives.fileformat
 
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, anyUrl, get, okXml, urlEqualTo}
-import graphql.codegen.types.FFIDMetadataInput
+import graphql.codegen.types.{FFIDMetadataInput, FFIDMetadataInputValues}
 import io.circe.{DecodingFailure, Printer}
 import io.circe.generic.auto._
 import io.circe.parser.decode
@@ -85,9 +85,9 @@ class LambdaTest extends AnyFlatSpec with BeforeAndAfterEach with BeforeAndAfter
 
   def createEvent(ffidFile: FFIDFile) = new ByteArrayInputStream(ffidFile.asJson.printWith(Printer.noSpaces).getBytes())
 
-  def decodeOutput(outputStream: ByteArrayOutputStream): FFIDMetadataInput = decode[FFIDResult](outputStream.toByteArray.map(_.toChar).mkString) match {
+  def decodeOutput(outputStream: ByteArrayOutputStream): FFIDMetadataInputValues = decode[FFIDResult](outputStream.toByteArray.map(_.toChar).mkString) match {
     case Left(err) => throw err
-    case Right(value) => value.fileFormat
+    case Right(value) => value.fileFormat.metadataInputValues.head
   }
 
   def testValidFileFormatEvent(eventName: String, fileName: String, expectedPuids: List[String]): Unit = {
