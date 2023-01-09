@@ -2,7 +2,7 @@ package uk.gov.nationalarchives.fileformat
 
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.Logger
-import graphql.codegen.types.{FFIDMetadataInput, FFIDMetadataInputMatches}
+import graphql.codegen.types.{FFIDMetadataInput, FFIDMetadataInputMatches, FFIDMetadataInputValues}
 import net.logstash.logback.argument.StructuredArguments.value
 import uk.gov.nationalarchives.droid.internal.api.{ApiResult, DroidAPI}
 import uk.gov.nationalarchives.fileformat.FFIDExtractor._
@@ -28,8 +28,8 @@ class FFIDExtractor(api: DroidAPI, rootDirectory: String) {
           case Nil => List(FFIDMetadataInputMatches(None, "", None))
           case results => results.map(res => FFIDMetadataInputMatches(Option(res.getExtension), res.getMethod.getMethod, Option(res.getPuid)))
         }
-
-        val metadataInput = FFIDMetadataInput(file.fileId, "Droid", droidVersion, droidSignatureVersion, containerSignatureVersion, "pronom", matches)
+        val values = FFIDMetadataInputValues(file.fileId, "Droid", droidVersion, droidSignatureVersion, containerSignatureVersion, "pronom", matches) :: Nil
+        val metadataInput = FFIDMetadataInput(values)
 
         logger.info(
           "File metadata with {} matches found for file ID {} in consignment ID {}",
