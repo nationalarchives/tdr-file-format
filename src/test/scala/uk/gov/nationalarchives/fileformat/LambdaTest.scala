@@ -104,7 +104,7 @@ class LambdaTest extends AnyFlatSpec with BeforeAndAfterEach with BeforeAndAfter
 
   def decodeOutput(outputStream: ByteArrayOutputStream): FFIDMetadataInputValues = decode[FFIDResult](outputStream.toByteArray.map(_.toChar).mkString) match {
     case Left(err) => throw err
-    case Right(value) => value.fileFormat.head
+    case Right(value) => value.fileFormat
   }
 
   def testValidFileFormatEvent(eventName: String, fileName: String, expectedPuids: List[String]): Unit = {

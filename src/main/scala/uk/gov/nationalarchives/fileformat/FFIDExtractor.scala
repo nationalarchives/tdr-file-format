@@ -2,7 +2,7 @@ package uk.gov.nationalarchives.fileformat
 
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.Logger
-import graphql.codegen.types.{FFIDMetadataInput, FFIDMetadataInputMatches, FFIDMetadataInputValues}
+import graphql.codegen.types.{FFIDMetadataInputMatches, FFIDMetadataInputValues}
 import net.logstash.logback.argument.StructuredArguments.value
 import uk.gov.nationalarchives.droid.internal.api.{ApiResult, DroidAPI}
 import uk.gov.nationalarchives.fileformat.FFIDExtractor._
@@ -14,7 +14,7 @@ import scala.util.{Failure, Success, Try}
 
 class FFIDExtractor(api: DroidAPI, rootDirectory: String) {
 
-  def ffidFile(file: FFIDFile): Either[Throwable, FFIDMetadataInput] = {
+  def ffidFile(file: FFIDFile): Either[Throwable, FFIDMetadataInputValues] = {
     Try {
       val outputPath = Paths.get(s"$rootDirectory/${file.originalPath}")
       val droidVersion = api.getDroidVersion
@@ -26,8 +26,6 @@ class FFIDExtractor(api: DroidAPI, rootDirectory: String) {
         case Nil => List(FFIDMetadataInputMatches(None, "", None))
         case results => results.map(res => FFIDMetadataInputMatches(Option(res.getExtension), res.getMethod.getMethod, Option(res.getPuid)))
       }
-      val values = FFIDMetadataInputValues(file.fileId, "Droid", droidVersion, droidSignatureVersion, containerSignatureVersion, "pronom", matches) :: Nil
-      val metadataInput = FFIDMetadataInput(values)
 
       logger.info(
         "File metadata with {} matches found for file ID {} in consignment ID {}",
@@ -35,7 +33,7 @@ class FFIDExtractor(api: DroidAPI, rootDirectory: String) {
         value("fileId", file.fileId),
         value("consignmentId", file.consignmentId)
       )
-      metadataInput
+      FFIDMetadataInputValues(file.fileId, "Droid", droidVersion, droidSignatureVersion, containerSignatureVersion, "pronom", matches)
     }
       .toEither.left.map(err => {
       err.printStackTrace()
