@@ -1,6 +1,6 @@
 package uk.gov.nationalarchives.fileformat
 
-import graphql.codegen.types.FFIDMetadataInput
+import graphql.codegen.types.{FFIDMetadataInput, FFIDMetadataInputValues}
 import io.circe.Printer
 import io.circe.generic.auto._
 import io.circe.parser.decode
@@ -30,10 +30,10 @@ class Lambda {
       extractedFFID <- extractFFID(ffidFile)
     } yield extractedFFID) match {
       case Left(error) => throw error
-      case Right(ffidResult) => outputStream.write(FFIDResult(ffidResult).asJson.printWith(Printer.noSpaces).getBytes())
+      case Right(ffidResult) => outputStream.write(FFIDResult(ffidResult.metadataInputValues).asJson.printWith(Printer.noSpaces).getBytes())
     }
   }
 }
 object Lambda {
-  case class FFIDResult(fileFormat: FFIDMetadataInput)
+  case class FFIDResult(fileFormat: List[FFIDMetadataInputValues])
 }
