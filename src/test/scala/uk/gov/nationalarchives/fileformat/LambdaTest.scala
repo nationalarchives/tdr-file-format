@@ -1,22 +1,24 @@
 package uk.gov.nationalarchives.fileformat
 
 import com.github.tomakehurst.wiremock.WireMockServer
-import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, anyUrl, get, okXml, urlEqualTo}
-import graphql.codegen.types.{FFIDMetadataInput, FFIDMetadataInputValues}
-import io.circe.{DecodingFailure, Printer}
+import com.github.tomakehurst.wiremock.client.WireMock._
+import com.github.tomakehurst.wiremock.stubbing.StubMapping
+import graphql.codegen.types.FFIDMetadataInputValues
 import io.circe.generic.auto._
 import io.circe.parser.decode
 import io.circe.syntax._
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
+import io.circe.{DecodingFailure, Printer}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers.{equal, _}
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor2}
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import uk.gov.nationalarchives.fileformat.FFIDExtractor.FFIDFile
 import uk.gov.nationalarchives.fileformat.Lambda.FFIDResult
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, File}
 import java.nio.file.{Files, Paths}
 import scala.io.Source.{fromFile, fromResource}
+import scala.jdk.CollectionConverters.ListHasAsScala
 import scala.reflect.io.Directory
 import scala.util.{Failure, Success, Using}
 
@@ -30,41 +32,56 @@ class LambdaTest extends AnyFlatSpec with BeforeAndAfterEach with BeforeAndAfter
     }
   }
 
-  def tnaCdn: WireMockServer = {
+  val tnaCdn: WireMockServer = {
     val tnaCdn = new WireMockServer(9002)
     val path = "./src/test/resources/containers"
-    tnaCdn.stubFor(get(urlEqualTo("/DROID_SignatureFile_1.xml"))
+    tnaCdn.stubFor(get(urlEqualTo("/DROID_SignatureFile_V1.xml"))
       .willReturn(okXml(getFile(s"$path/droid_signatures.xml"))))
-    tnaCdn.stubFor(get(urlEqualTo("/container-signature-1.xml"))
+    tnaCdn.stubFor(get(urlEqualTo("/container-signature-19700101.xml"))
       .willReturn(okXml(getFile(s"$path/container_signatures.xml"))))
     tnaCdn
   }
 
+  val versionCdn: WireMockServer = {
+    val versionCdn = new WireMockServer(9003)
+    versionCdn.stubFor(get(urlEqualTo("/pronom/container-signature.xml"))
+      .willReturn(ok().withHeader("last-modified", "Thu, 1 Jan 1970 00:00:00 GMT"))
+    )
+    versionCdn.stubFor(post(urlEqualTo("/pronom/service.asmx"))
+      .willReturn(okXml(getFile("./src/test/resources/containers/droid_version.xml")))
+    )
+    versionCdn
+  }
+
   override def beforeAll(): Unit = {
     tnaCdn.start()
+    versionCdn.start()
   }
 
   override def afterAll(): Unit = {
     tnaCdn.stop()
+    versionCdn.stop()
   }
 
   override def beforeEach(): Unit = {
     val testFilesPath = "./src/test/resources/testfiles"
     new File(s"$testFilesPath/running-files").mkdir()
     wiremockS3.start()
+    tnaCdn.getAllServeEvents.asScala.foreach(ev => tnaCdn.removeServeEvent(ev.getId))
+    versionCdn.getAllServeEvents.asScala.foreach(ev => versionCdn.removeServeEvent(ev.getId))
   }
 
   override def afterEach(): Unit = {
     new File("${sys:logFile}").delete()
     new File("derby.log").delete()
     val runningFiles = new File(s"./src/test/resources/testfiles/running-files/")
-    if(runningFiles.exists()) {
+    if (runningFiles.exists()) {
       new Directory(runningFiles).deleteRecursively()
     }
     wiremockS3.stop()
   }
 
-  def mockFileDownload(ffidFile: FFIDFile, fileName: String) = {
+  def mockFileDownload(ffidFile: FFIDFile, fileName: String): StubMapping = {
     val filePath = s"./src/test/resources/testfiles/$fileName"
     val bytes = Files.readAllBytes(Paths.get(filePath))
     wiremockS3.stubFor(get(urlEqualTo(s"/${ffidFile.userId}/${ffidFile.consignmentId}/${ffidFile.fileId}"))
@@ -72,7 +89,7 @@ class LambdaTest extends AnyFlatSpec with BeforeAndAfterEach with BeforeAndAfter
     )
   }
 
-  def mockS3Error() = {
+  def mockS3Error(): StubMapping = {
     wiremockS3.stubFor(get(anyUrl())
       .willReturn(aResponse().withStatus(404))
     )
@@ -119,7 +136,7 @@ class LambdaTest extends AnyFlatSpec with BeforeAndAfterEach with BeforeAndAfter
   }
 
   val testFiles: TableFor2[String, List[String]] = Table(
-    ("FileName","ExpectedPuids"),
+    ("FileName", "ExpectedPuids"),
     ("Test.docx", List("fmt/412")),
     ("Test.xlsx", List("fmt/214")),
     ("Test.pdf", List("fmt/276"))

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+  <soap:Body>
+    <getSignatureFileVersionV1Response>
+      <Version>
+        <Version>1</Version>
+      </Version>
+    </getSignatureFileVersionV1Response>
+  </soap:Body>
+</soap:Envelope>
