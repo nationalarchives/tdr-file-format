@@ -6,13 +6,12 @@ import org.w3c.dom.Document
 import uk.gov.nationalarchives.fileformat.SignatureFiles._
 
 import java.io._
+import java.net.URI
 import java.net.http.HttpRequest.BodyPublishers
 import java.net.http.HttpResponse.BodyHandlers
 import java.net.http.{HttpClient, HttpRequest}
-import java.net.{URI, URL}
-import java.nio.file.attribute.PosixFilePermissions
-import java.nio.file.{Files, Path, Paths, StandardCopyOption}
 import java.nio.file.StandardOpenOption._
+import java.nio.file.{Path, Paths}
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import javax.xml.parsers.DocumentBuilderFactory
