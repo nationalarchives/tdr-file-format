@@ -39,7 +39,7 @@ class SignatureFilesTest extends AnyFlatSpec with MockitoSugar with TableDrivenP
       versionCaptor.getAllValues.size should equal(0)
     }
 
-    "downloadSignatureFile" should s"not call the droid api if the files do not exist for the $signatureType" in {
+    "downloadSignatureFile" should s"call the droid api if the files do not exist for the $signatureType" in {
       val client = mock[HttpClient]
       val versionCaptor: ArgumentCaptor[HttpRequest] = ArgumentCaptor.forClass(classOf[HttpRequest])
       when(client.send[Any](versionCaptor.capture(), any[BodyHandler[Any]]))

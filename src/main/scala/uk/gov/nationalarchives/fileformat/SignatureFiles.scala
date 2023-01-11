@@ -88,7 +88,7 @@ object SignatureFiles {
   private val droidSignaturePrefix = "DROID_SignatureFile_V"
   val rootDirectory: String = config.getString("root.directory")
   val logger: Logger = Logger[SignatureFiles]
-  private val nationalArchivesUrl = config.getString("signatures.version")
+  private val nationalArchivesUrl = config.getString("signatures.nationalArchivesUrl")
 
 
   def apply(): SignatureFiles = {
