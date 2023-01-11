@@ -29,7 +29,7 @@ class FFIDExtractorTest extends AnyFlatSpec with MockitoSugar with EitherValues 
 
     val result = new FFIDExtractor(mockApi, rootDirectory).ffidFile(ffidFile)
 
-    val ffid = result.right.value.metadataInputValues.head
+    val ffid = result.right.value
     ffid.softwareVersion should equal(testDroidVersion)
     ffid.containerSignatureFileVersion should equal(testContainerSignatureVersion)
     ffid.binarySignatureFileVersion should equal(testBinarySignatureVersion)
@@ -41,7 +41,7 @@ class FFIDExtractorTest extends AnyFlatSpec with MockitoSugar with EitherValues 
     when(api.submit(any[Path])).thenReturn(List(mockResult).asJava)
 
     val result = new FFIDExtractor(api, rootDirectory).ffidFile(ffidFile)
-    val ffid = result.right.value.metadataInputValues.head
+    val ffid = result.right.value
     val m = ffid.matches.head
     m.extension.isEmpty should be(true)
     m.puid.isEmpty should be(true)
@@ -57,7 +57,7 @@ class FFIDExtractorTest extends AnyFlatSpec with MockitoSugar with EitherValues 
     when(api.submit(any[Path])).thenReturn(apiResults.asJava)
 
     val result = new FFIDExtractor(api, rootDirectory).ffidFile(ffidFile)
-    val ffid = result.right.value.metadataInputValues.head
+    val ffid = result.right.value
     ffid.matches.size should equal(3)
   }
 

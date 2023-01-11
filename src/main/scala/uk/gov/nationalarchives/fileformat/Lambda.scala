@@ -1,6 +1,6 @@
 package uk.gov.nationalarchives.fileformat
 
-import graphql.codegen.types.FFIDMetadataInput
+import graphql.codegen.types.FFIDMetadataInputValues
 import io.circe.Printer
 import io.circe.generic.auto._
 import io.circe.parser.decode
@@ -18,7 +18,7 @@ class Lambda {
 
   private val ffidExtractor: FFIDExtractor = FFIDExtractor()
 
-  private def extractFFID(ffidFile: FFIDFile): Either[Throwable, FFIDMetadataInput] = for {
+  private def extractFFID(ffidFile: FFIDFile): Either[Throwable, FFIDMetadataInputValues] = for {
     _ <- s3Utils.downloadFile(ffidFile)
     metadata <- ffidExtractor.ffidFile(ffidFile)
   } yield metadata
@@ -35,5 +35,5 @@ class Lambda {
   }
 }
 object Lambda {
-  case class FFIDResult(fileFormat: FFIDMetadataInput)
+  case class FFIDResult(fileFormat: FFIDMetadataInputValues)
 }

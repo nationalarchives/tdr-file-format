@@ -18,10 +18,15 @@ The function then calls the Droid API against this file to extract the [PRONOM] 
 ### DROID and file format signatures
 
 Droid is contained within the `"uk.gov.nationalarchives" % "droid-api"` dependency. 
-The binary and container signature files are downloaded when the lambda is first started. 
-The versions of the signature files are stored in the `DROID_SIGNATURE_VERSION` and `CONTAINER_SIGNATURE_VERSION` environment variables. 
-To update to a new version of these signature files, we need to update the values in the environment variables.
-Getting updates for the signature files is currently a manual process. There is a full list of files [available here](https://www.nationalarchives.gov.uk/aboutapps/pronom/droid-signature-files.htm).
+The binary and container signature files are downloaded when the lambda is first started. To get the signature files, it carries out the following steps. 
+* Checks to see if the `/tmp` directory contains container-* or DROID_Signature*
+* If they exist, use those to create the Droid instance.
+* If they don't exist:
+    * Call http://www.nationalarchives.gov.uk/pronom/container-signature.xml and get the last modified date
+    * Convert this to YYYYMMDD and use that for the container signature version
+    * Call the SOAP endpoint at http://www.nationalarchives.gov.uk/pronom/service.asmx
+    * This returns the latest Droid signature file version.
+    * Download both these files from the TNA CDN as before.
 
 ### File format Lambda
 
