@@ -124,7 +124,7 @@ class LambdaTest extends AnyFlatSpec with BeforeAndAfterEach with BeforeAndAfter
     val exception = intercept[DecodingFailure] {
       new Lambda().process(createEvent(decodeInputJson("ffid_invalid_consignment_id")), null)
     }
-    exception.getMessage should equal("Got value '\"1\"' with wrong type, expecting string: DownField(consignmentId)")
+    exception.getMessage should equal("DecodingFailure at .consignmentId: Got value '\"1\"' with wrong type, expecting string")
   }
 
   "The process method" should "return an error if the file id is missing" in {
