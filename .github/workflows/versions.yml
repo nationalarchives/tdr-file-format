@@ -1,6 +1,8 @@
 name: Check for new Droid versions
 on:
-  push:
+  workflow_dispatch:
+  schedule:
+    - cron: '30 4 * * 1'
 permissions:
   id-token: write
   contents: write
