@@ -3,6 +3,7 @@ package uk.gov.nationalarchives.fileformat
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.Logger
 import org.w3c.dom.Document
+import uk.gov.nationalarchives.fileformat.FFIDExtractor.configFactory
 import uk.gov.nationalarchives.fileformat.SignatureFiles._
 
 import java.io._
@@ -31,7 +32,11 @@ class SignatureFiles(client: HttpClient, existingFiles: List[File]) {
       val fileName = if (fileType == "container") {
         s"$containerSignaturePrefix${containerSignatureVersion()}.xml"
       } else {
-        s"$droidSignaturePrefix${droidSignatureVersion()}.xml"
+        if(configFactory.getBoolean("droid.pin")) {
+          s"$droidSignaturePrefix${configFactory.getString("droid.version")}.xml"
+        } else {
+          s"$droidSignaturePrefix${droidSignatureVersion()}.xml"
+        }
       }
 
       val path = Paths.get(s"$rootDirectory/$fileName")
