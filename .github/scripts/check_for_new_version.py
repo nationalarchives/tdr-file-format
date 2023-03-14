@@ -21,8 +21,8 @@ response = requests.post(url, headers=headers, data=get_data())
 tree = etree.fromstring(response.text)
 namespaces = {'soap': 'http://schemas.xmlsoap.org/soap/envelope/'}
 body = tree.findall("soap:Body", namespaces)[0]
-version = list(body)[0].getchildren()[0]
-latest_version = version.getchildren()[0].text
+version = list(list(body)[0])[0]
+latest_version = list(version)[0].text
 
 
 def replace_line(line):
