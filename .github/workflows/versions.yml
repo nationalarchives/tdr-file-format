@@ -3,7 +3,7 @@ on:
   push:
 permissions:
   id-token: write
-  contents: read
+  contents: write
 jobs:
   check-versions:
     runs-on: ubuntu-latest
