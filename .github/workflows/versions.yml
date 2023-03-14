@@ -16,6 +16,8 @@ jobs:
         continue-on-error: true
       - if: steps.check-diff.outcome != 'success'
         run: |
+          git config --global user.email digitalpreservation@nationalarchives.gov.uk
+          git config --global user.name tna-digital-archiving-jenkins
           git checkout -b $BRANCH_NAME
           git add -A 
           git commit -m "Droid version bump"
