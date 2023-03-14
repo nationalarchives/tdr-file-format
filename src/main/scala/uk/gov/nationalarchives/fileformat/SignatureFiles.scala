@@ -31,7 +31,11 @@ class SignatureFiles(client: HttpClient, existingFiles: List[File]) {
       val fileName = if (fileType == "container") {
         s"$containerSignaturePrefix${containerSignatureVersion()}.xml"
       } else {
-        s"$droidSignaturePrefix${droidSignatureVersion()}.xml"
+        if(config.getBoolean("droid.pin")) {
+          s"$droidSignaturePrefix${config.getString("droid.version")}.xml"
+        } else {
+          s"$droidSignaturePrefix${droidSignatureVersion()}.xml"
+        }
       }
 
       val path = Paths.get(s"$rootDirectory/$fileName")
