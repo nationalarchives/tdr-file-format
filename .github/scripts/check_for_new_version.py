@@ -42,4 +42,3 @@ with open("src/main/resources/application.conf", "r+") as conf:
     new_conf = (replace_line(line) for line in lines)
     conf.seek(0)
     conf.write(''.join(list(new_conf)))
-
