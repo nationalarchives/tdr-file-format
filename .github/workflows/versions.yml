@@ -22,7 +22,7 @@ jobs:
           git add -A 
           git commit -m "Droid version bump"
           git push -u origin $BRANCH_NAME
-          gh pr create --fill
+          gh pr create --title "Droid Version Bump" --body "Bump Droid Version"
         env:
           GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
           BRANCH_NAME: droid-version-bump-${{ github.run_id }}${{ github.run_attempt }}
