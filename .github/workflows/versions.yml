@@ -10,7 +10,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - run: pip install requests
-      - run: .github/scripts/check_for_new_version.py
+      - run: python .github/scripts/check_for_new_version.py
       - id: check-diff
         run: git diff --exit-code
         continue-on-error: true
