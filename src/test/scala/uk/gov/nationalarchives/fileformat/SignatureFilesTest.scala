@@ -38,27 +38,6 @@ class SignatureFilesTest extends AnyFlatSpec with MockitoSugar with TableDrivenP
       new SignatureFiles(client, existingFiles).downloadSignatureFile(signatureType)
       versionCaptor.getAllValues.size should equal(0)
     }
-
-    "downloadSignatureFile" should s"call the droid api if the files do not exist for the $signatureType" in {
-      val client = mock[HttpClient]
-      val versionCaptor: ArgumentCaptor[HttpRequest] = ArgumentCaptor.forClass(classOf[HttpRequest])
-      when(client.send[Any](versionCaptor.capture(), any[BodyHandler[Any]]))
-        .thenReturn(
-          createResponse(200, Source.fromResource("containers/droid_version.xml").mkString),
-          createResponse(200, "test")
-        )
-      new SignatureFiles(client, Nil).downloadSignatureFile(signatureType)
-      versionCaptor.getAllValues.size should equal(2)
-    }
-
-    "downloadSignatureFile" should s"return an error if the API returns an error for the $signatureType signature" in {
-      val client = mock[HttpClient]
-      val versionCaptor: ArgumentCaptor[HttpRequest] = ArgumentCaptor.forClass(classOf[HttpRequest])
-      when(client.send[Any](versionCaptor.capture(), any[BodyHandler[Any]]))
-        .thenThrow(new Exception("An error"))
-      val fileResponse = new SignatureFiles(client, Nil).downloadSignatureFile(signatureType)
-      fileResponse.isFailure should be(true)
-    }
   }
 
   def createResponse[T](status: Int, responseBody: T): HttpResponse[T] = new HttpResponse[T] {

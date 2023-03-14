@@ -47,9 +47,6 @@ class LambdaTest extends AnyFlatSpec with BeforeAndAfterEach with BeforeAndAfter
     versionCdn.stubFor(get(urlEqualTo("/pronom/container-signature.xml"))
       .willReturn(ok().withHeader("last-modified", "Thu, 1 Jan 1970 00:00:00 GMT"))
     )
-    versionCdn.stubFor(post(urlEqualTo("/pronom/service.asmx"))
-      .willReturn(okXml(getFile("./src/test/resources/containers/droid_version.xml")))
-    )
     versionCdn
   }
 

@@ -1,0 +1,25 @@
+name: Check for new Droid versions
+on:
+  push:
+permissions:
+  id-token: write
+  contents: read
+jobs:
+  runs-on: ubuntu-latest
+  steps:
+    - uses: actions/checkout@v3
+    - run: pip install requests
+    - run: .github/scripts/check_for_new_version.py
+    - id: check-diff
+      run: git diff --exit-code
+      continue-on-error: true
+    - if: steps.check-diff.outcome == 'success'
+      run: |
+        git checkout -b $BRANCH_NAME
+        git add -A 
+        git commit -m "Droid version bump"
+        git push -u origin $BRANCH_NAME
+        gh pr create --fill
+      env:
+        GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
+        BRANCH_NAME: droid-version-bump-${{ github.run_id }}${{ github.run_attempt }}
