@@ -37,16 +37,13 @@ class LambdaTest extends AnyFlatSpec with BeforeAndAfterEach with BeforeAndAfter
     val path = "./src/test/resources/containers"
     tnaCdn.stubFor(get(urlEqualTo("/DROID_SignatureFile_V1.xml"))
       .willReturn(okXml(getFile(s"$path/droid_signatures.xml"))))
-    tnaCdn.stubFor(get(urlEqualTo("/container-signature-19700101.xml"))
+    tnaCdn.stubFor(get(urlEqualTo("/container-signature-1.xml"))
       .willReturn(okXml(getFile(s"$path/container_signatures.xml"))))
     tnaCdn
   }
 
   val versionCdn: WireMockServer = {
     val versionCdn = new WireMockServer(9003)
-    versionCdn.stubFor(get(urlEqualTo("/pronom/container-signature.xml"))
-      .willReturn(ok().withHeader("last-modified", "Thu, 1 Jan 1970 00:00:00 GMT"))
-    )
     versionCdn.stubFor(post(urlEqualTo("/pronom/service.asmx"))
       .willReturn(okXml(getFile("./src/test/resources/containers/droid_version.xml")))
     )
