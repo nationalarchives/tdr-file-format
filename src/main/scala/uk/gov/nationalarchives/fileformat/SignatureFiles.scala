@@ -23,7 +23,7 @@ class SignatureFiles(client: HttpClient, existingFiles: List[File]) {
       .map(f => Paths.get(f.getPath)).getOrElse {
       logger.debug("Downloading signature files")
       val fileName = if (fileType == "container") {
-        s"$containerSignaturePrefix${containerSignatureVersion()}.xml"
+        s"$containerSignaturePrefix${config.getString("containers.version")}.xml"
       } else {
         s"$droidSignaturePrefix${config.getString("droid.version")}.xml"
       }
@@ -33,14 +33,6 @@ class SignatureFiles(client: HttpClient, existingFiles: List[File]) {
       val request = HttpRequest.newBuilder.uri(uri).GET().build()
       client.send(request, BodyHandlers.ofFile(path, TRUNCATE_EXISTING, WRITE, CREATE_NEW)).body()
     }
-  }
-
-  private def containerSignatureVersion(): String = {
-    val uri = new URI(s"$nationalArchivesUrl/pronom/container-signature.xml")
-    val request = HttpRequest.newBuilder.uri(uri).GET().build()
-    val lastModifiedHeaderValue = client.send(request, BodyHandlers.ofString()).headers().firstValue("last-modified").get()
-    val lastModified = LocalDateTime.parse(lastModifiedHeaderValue, DateTimeFormatter.RFC_1123_DATE_TIME)
-    DateTimeFormatter.ofPattern("yyyyMMdd").format(lastModified)
   }
 }
 object SignatureFiles {
