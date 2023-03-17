@@ -42,22 +42,12 @@ class LambdaTest extends AnyFlatSpec with BeforeAndAfterEach with BeforeAndAfter
     tnaCdn
   }
 
-  val versionCdn: WireMockServer = {
-    val versionCdn = new WireMockServer(9003)
-    versionCdn.stubFor(post(urlEqualTo("/pronom/service.asmx"))
-      .willReturn(okXml(getFile("./src/test/resources/containers/droid_version.xml")))
-    )
-    versionCdn
-  }
-
   override def beforeAll(): Unit = {
     tnaCdn.start()
-    versionCdn.start()
   }
 
   override def afterAll(): Unit = {
     tnaCdn.stop()
-    versionCdn.stop()
   }
 
   override def beforeEach(): Unit = {
@@ -65,7 +55,6 @@ class LambdaTest extends AnyFlatSpec with BeforeAndAfterEach with BeforeAndAfter
     new File(s"$testFilesPath/running-files").mkdir()
     wiremockS3.start()
     tnaCdn.getAllServeEvents.asScala.foreach(ev => tnaCdn.removeServeEvent(ev.getId))
-    versionCdn.getAllServeEvents.asScala.foreach(ev => versionCdn.removeServeEvent(ev.getId))
   }
 
   override def afterEach(): Unit = {

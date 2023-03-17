@@ -1,0 +1,30 @@
+name: Check for new Droid versions
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '30 4 * * 1'
+permissions:
+  id-token: write
+  contents: write
+jobs:
+  check-versions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: pip install requests
+      - run: python .github/scripts/check_for_new_version.py
+      - id: check-diff
+        run: git diff --exit-code
+        continue-on-error: true
+      - if: steps.check-diff.outcome != 'success'
+        run: |
+          git config --global user.email digitalpreservation@nationalarchives.gov.uk
+          git config --global user.name tna-digital-archiving-jenkins
+          git checkout -b $BRANCH_NAME
+          git add -A 
+          git commit -m "Droid version bump"
+          git push -u origin $BRANCH_NAME
+          gh pr create --title "Droid Version Bump" --body "Bump Droid Version"
+        env:
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
+          BRANCH_NAME: droid-version-bump-${{ github.run_id }}${{ github.run_attempt }}
