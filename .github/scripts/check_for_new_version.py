@@ -66,7 +66,7 @@ with open("src/main/resources/application.conf", "r+") as conf:
     if validate_xml(f"DROID_SignatureFile_V{latest_droid_version}.xml"):
         conf_replaced = (replace_line(line, 'droid', latest_droid_version, "\n") for line in lines)
     if validate_xml(f"container-signature-{latest_containers_version}.xml"):
-        conf_replaced = (replace_line(line, 'containers', latest_containers_version) for line in droid_replaced)
+        conf_replaced = (replace_line(line, 'containers', latest_containers_version) for line in lines)
     if conf_replaced != '':
         conf.seek(0)
         conf.write(''.join(list(conf_replaced)))
