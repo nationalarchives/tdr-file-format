@@ -58,6 +58,17 @@ class FFIDExtractorTest extends AnyFlatSpec with MockitoSugar with EitherValues 
     m.fileExtensionMismatch.contains(true)
   }
 
+  "the ffid method" should "return a file format name if one exists" in {
+    val api = mock[DroidAPI]
+    val mockResult = new ApiResult(null, IdentificationMethod.EXTENSION, null, ".formatName", true)
+    when(api.submit(any[Path])).thenReturn(List(mockResult).asJava)
+
+    val result = new FFIDExtractor(api, rootDirectory).ffidFile(ffidFile)
+    val ffid = result.right.value
+    val m = ffid.matches.head
+    m.formatName.contains(".formatName")
+  }
+
   "The ffid method" should "return more than one result for multiple result rows" in {
     val api = mock[DroidAPI]
     val apiResults = for {
