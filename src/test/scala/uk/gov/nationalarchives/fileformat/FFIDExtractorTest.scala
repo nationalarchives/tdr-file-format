@@ -37,7 +37,7 @@ class FFIDExtractorTest extends AnyFlatSpec with MockitoSugar with EitherValues 
 
   "The ffid method" should "return the correct value if the extension and puid are empty" in {
     val api = mock[DroidAPI]
-    val mockResult = new ApiResult(null, IdentificationMethod.EXTENSION, null, "testName")
+    val mockResult = new ApiResult(null, IdentificationMethod.EXTENSION, null, "testName", false)
     when(api.submit(any[Path])).thenReturn(List(mockResult).asJava)
 
     val result = new FFIDExtractor(api, rootDirectory).ffidFile(ffidFile)
@@ -47,11 +47,33 @@ class FFIDExtractorTest extends AnyFlatSpec with MockitoSugar with EitherValues 
     m.puid.isEmpty should be(true)
   }
 
+  "the ffid method" should "return a file extension mismatch if one exists" in {
+    val api = mock[DroidAPI]
+    val mockResult = new ApiResult(null, IdentificationMethod.EXTENSION, null, "testName", true)
+    when(api.submit(any[Path])).thenReturn(List(mockResult).asJava)
+
+    val result = new FFIDExtractor(api, rootDirectory).ffidFile(ffidFile)
+    val ffid = result.right.value
+    val m = ffid.matches.head
+    m.fileExtensionMismatch.contains(true)
+  }
+
+  "the ffid method" should "return a file format name if one exists" in {
+    val api = mock[DroidAPI]
+    val mockResult = new ApiResult(null, IdentificationMethod.EXTENSION, null, ".formatName", true)
+    when(api.submit(any[Path])).thenReturn(List(mockResult).asJava)
+
+    val result = new FFIDExtractor(api, rootDirectory).ffidFile(ffidFile)
+    val ffid = result.right.value
+    val m = ffid.matches.head
+    m.formatName.contains(".formatName")
+  }
+
   "The ffid method" should "return more than one result for multiple result rows" in {
     val api = mock[DroidAPI]
     val apiResults = for {
       count <- List("1", "2", "3")
-      res <- new ApiResult(s"extension$count", IdentificationMethod.EXTENSION, s"puid$count", s"testName$count") :: Nil
+      res <- new ApiResult(s"extension$count", IdentificationMethod.EXTENSION, s"puid$count", s"testName$count", false) :: Nil
     } yield res
 
     when(api.submit(any[Path])).thenReturn(apiResults.asJava)
@@ -75,10 +97,12 @@ class FFIDExtractorTest extends AnyFlatSpec with MockitoSugar with EitherValues 
     when(api.submit(any[Path])).thenReturn(List().asJava)
 
     val result = new FFIDExtractor(api, rootDirectory).ffidFile(ffidFileWithQuote)
-    result.isRight should be (true)
+    result.isRight should be(true)
   }
 
   val userId: UUID = UUID.randomUUID()
+
   def ffidFile: FFIDFile = FFIDFile(UUID.randomUUID(), UUID.randomUUID(), "originalPath", userId)
+
   def ffidFileWithQuote: FFIDFile = FFIDFile(UUID.randomUUID(), UUID.randomUUID(), """rootDirectory/originalPath"withQu'ote""", userId)
 }

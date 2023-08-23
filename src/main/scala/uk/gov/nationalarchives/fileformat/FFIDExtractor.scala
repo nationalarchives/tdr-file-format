@@ -23,8 +23,10 @@ class FFIDExtractor(api: DroidAPI, rootDirectory: String) {
       val results: List[ApiResult] = api.submit(outputPath).asScala.toList
 
       val matches = results match {
-        case Nil => List(FFIDMetadataInputMatches(None, "", None))
-        case results => results.map(res => FFIDMetadataInputMatches(Option(res.getExtension), res.getMethod.getMethod, Option(res.getPuid)))
+        case Nil => List(FFIDMetadataInputMatches(None, "", None, None, None))
+        case results => results.map(res => {
+          FFIDMetadataInputMatches(Option(res.getExtension), res.getMethod.getMethod, Option(res.getPuid), Option(res.isFileExtensionMismatch), Option(res.getName))
+        })
       }
 
       logger.info(
@@ -36,13 +38,13 @@ class FFIDExtractor(api: DroidAPI, rootDirectory: String) {
       FFIDMetadataInputValues(file.fileId, "Droid", droidVersion, droidSignatureVersion, containerSignatureVersion, "pronom", matches)
     }
       .toEither.left.map(err => {
-      err.printStackTrace()
-      logger.error(
-        "Error processing file ID {}' in consignment ID {}", value("fileId", file.fileId),
-        value("consignmentId", file.consignmentId)
-      )
-      new RuntimeException(s"Error processing file id ${file.fileId} with original path ${file.originalPath}", err)
-    })
+        err.printStackTrace()
+        logger.error(
+          "Error processing file ID {}' in consignment ID {}", value("fileId", file.fileId),
+          value("consignmentId", file.consignmentId)
+        )
+        new RuntimeException(s"Error processing file id ${file.fileId} with original path ${file.originalPath}", err)
+      })
   }
 }
 
@@ -50,6 +52,7 @@ object FFIDExtractor {
   val configFactory: Config = ConfigFactory.load
 
   case class FFIDFile(consignmentId: UUID, fileId: UUID, originalPath: String, userId: UUID)
+
   val logger: Logger = Logger[FFIDExtractor]
   val rootDirectory: String = configFactory.getString("root.directory")
   private val signatureFiles = SignatureFiles()
