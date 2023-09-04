@@ -16,7 +16,7 @@ object Dependencies {
   lazy val logback = "ch.qos.logback" % "logback-classic" % "1.4.11"
   lazy val logstashLogbackEncoder = "net.logstash.logback" % "logstash-logback-encoder" % "7.4"
   lazy val mockito = "org.mockito" %% "mockito-scala" % "1.17.22"
-  lazy val wiremock = "com.github.tomakehurst" % "wiremock" % "3.0.0"
+  lazy val wiremock = "com.github.tomakehurst" % "wiremock" % "3.0.1"
   lazy val droidApi = "uk.gov.nationalarchives" % "droid-api" % "6.7.0-RC5"
   lazy val apacheCommons = "org.apache.commons" % "commons-lang3" % "3.13.0"
   // This is an older version of this dependency but the newer version won't work with Droid without some major changes.
