@@ -4,7 +4,7 @@ object Dependencies {
   private val circeVersion = "0.14.6"
 
   lazy val scalaTest = "org.scalatest" %% "scalatest" % "3.2.17"
-  lazy val typesafe = "com.typesafe" % "config" % "1.4.2"
+  lazy val typesafe = "com.typesafe" % "config" % "1.4.3"
   lazy val s3Sdk = "software.amazon.awssdk" % "s3" % "2.18.24"
   lazy val circeCore = "io.circe" %% "circe-core" % circeVersion
   lazy val circeGeneric = "io.circe" %% "circe-generic" % circeVersion
