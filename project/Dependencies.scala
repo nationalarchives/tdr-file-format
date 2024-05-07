@@ -1,7 +1,7 @@
 import sbt._
 
 object Dependencies {
-  private val circeVersion = "0.14.6"
+  private val circeVersion = "0.14.7"
 
   lazy val scalaTest = "org.scalatest" %% "scalatest" % "3.2.18"
   lazy val typesafe = "com.typesafe" % "config" % "1.4.3"
@@ -9,8 +9,8 @@ object Dependencies {
   lazy val circeCore = "io.circe" %% "circe-core" % circeVersion
   lazy val circeGeneric = "io.circe" %% "circe-generic" % circeVersion
   lazy val circeParser = "io.circe" %% "circe-parser" % circeVersion
-  lazy val s3Utils =  "uk.gov.nationalarchives" %% "s3-utils" % "0.1.161"
-  lazy val generatedGraphql =  "uk.gov.nationalarchives" %% "tdr-generated-graphql" % "0.0.374"
+  lazy val s3Utils =  "uk.gov.nationalarchives" %% "s3-utils" % "0.1.169"
+  lazy val generatedGraphql =  "uk.gov.nationalarchives" %% "tdr-generated-graphql" % "0.0.375"
   lazy val csvParser = "com.github.tototoshi" %% "scala-csv" % "1.3.10"
   lazy val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5"
   lazy val logback = "ch.qos.logback" % "logback-classic" % "1.5.6"
