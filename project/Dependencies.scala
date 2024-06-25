@@ -3,7 +3,7 @@ import sbt._
 object Dependencies {
   private val circeVersion = "0.14.8"
 
-  lazy val scalaTest = "org.scalatest" %% "scalatest" % "3.2.18"
+  lazy val scalaTest = "org.scalatest" %% "scalatest" % "3.2.19"
   lazy val typesafe = "com.typesafe" % "config" % "1.4.3"
   lazy val s3Sdk = "software.amazon.awssdk" % "s3" % "2.18.24"
   lazy val circeCore = "io.circe" %% "circe-core" % circeVersion
