@@ -17,7 +17,7 @@ object Dependencies {
   lazy val logstashLogbackEncoder = "net.logstash.logback" % "logstash-logback-encoder" % "8.0"
   lazy val mockito = "org.mockito" %% "mockito-scala" % "1.17.37"
   lazy val wiremock = "com.github.tomakehurst" % "wiremock" % "3.0.1"
-  lazy val droidApi = "uk.gov.nationalarchives" % "droid-api" % "6.8.0"
+  lazy val droidApi = "uk.gov.nationalarchives" % "droid-api" % "6.8.1"
   lazy val apacheCommons = "org.apache.commons" % "commons-lang3" % "3.17.0"
   // This is an older version of this dependency but the newer version won't work with Droid without some major changes.
   // Scala Steward configured to ignore it.
