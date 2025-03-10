@@ -1,6 +1,5 @@
 name: TDR Tag and pre deploy
 on:
-  workflow_dispatch: 
   push:
     branches:
       - master
@@ -9,7 +8,7 @@ permissions:
   contents: write
 jobs:
   pre-deploy:
-    uses: nationalarchives/tdr-github-actions/.github/workflows/lambda_build.yml@new-lambda-s3-structure
+    uses: nationalarchives/tdr-github-actions/.github/workflows/lambda_build.yml@main
     with:
       lambda-name: file-format-v2
       repo-name: tdr-file-format
@@ -24,6 +23,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - run: gh workflow run deploy.yml --ref TDRD-666 -f environment=intg -f to-deploy=${{ needs.pre-deploy.outputs.next-version }}
+      - run: gh workflow run deploy.yml -f environment=intg -f to-deploy=${{ needs.pre-deploy.outputs.next-version }}
         env:
           GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
