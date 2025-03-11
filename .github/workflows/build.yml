@@ -10,6 +10,7 @@ jobs:
   pre-deploy:
     uses: nationalarchives/tdr-github-actions/.github/workflows/lambda_build.yml@main
     with:
+      lambda-name: file-format-v2
       repo-name: tdr-file-format
       artifact-name: file-format
       build-command: |
