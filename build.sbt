@@ -24,7 +24,8 @@ lazy val root = (project in file("."))
       scalaLogging,
       logback,
       logstashLogbackEncoder,
-      droidApi,
+//      DROID using out of date 'commons configuration' which has vulnerabilities
+      droidApi exclude("commons-configuration", "commons-configuration"),
       javaxXml,
       apacheCommons % Test,
       scalaTest % Test,
@@ -33,6 +34,8 @@ lazy val root = (project in file("."))
     )
   )
 
+//Override out of date transitory dependencies with vulnerabilities
+dependencyOverrides += "org.apache.commons" % "commons-configuration2" % "2.11.0"
 dependencyOverrides += "commons-logging" % "commons-logging" % "1.3.5"
 
 (Test / fork) := true
