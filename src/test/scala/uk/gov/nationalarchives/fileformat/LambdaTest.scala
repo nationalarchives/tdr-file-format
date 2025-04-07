@@ -118,7 +118,7 @@ class LambdaTest extends AnyFlatSpec with BeforeAndAfterEach with BeforeAndAfter
     val exception = intercept[RuntimeException] {
       new Lambda().process(createEvent(decodeInputJson("ffid_missing_file")), null)
     }
-    exception.getMessage should equal("null (Service: S3, Status Code: 404, Request ID: null)")
+    exception.getMessage should equal("(Service: S3, Status Code: 404, Request ID: null) (SDK Attempt Count: 1)")
   }
 
   val testFiles: TableFor2[String, List[String]] = Table(
