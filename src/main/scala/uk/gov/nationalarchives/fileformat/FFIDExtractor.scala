@@ -51,7 +51,7 @@ class FFIDExtractor(api: DroidAPI, rootDirectory: String) {
 object FFIDExtractor {
   val configFactory: Config = ConfigFactory.load
 
-  case class FFIDFile(consignmentId: UUID, fileId: UUID, originalPath: String, userId: UUID, s3Bucket: Option[String] = None, s3ObjectKey: Option[String] = None)
+  case class FFIDFile(consignmentId: UUID, fileId: UUID, originalPath: String, userId: UUID, s3SourceBucket: Option[String] = None, s3SourceBucketKey: Option[String] = None)
 
   val logger: Logger = Logger[FFIDExtractor]
   val rootDirectory: String = configFactory.getString("root.directory")

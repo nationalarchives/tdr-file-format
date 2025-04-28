@@ -15,12 +15,12 @@ class S3Utils(s3Client: S3Client, bucketName: String, rootDirectory: String) {
 
   val logger: Logger = Logger[S3Utils]
 
-  private def s3Bucket(file: FFIDFile) = file.s3Bucket match {
+  private def s3Bucket(file: FFIDFile) = file.s3SourceBucket match {
     case Some(v) => v
     case _ => bucketName
   }
 
-  private def s3ObjectKey(file: FFIDFile): String = file.s3ObjectKey match {
+  private def s3ObjectKey(file: FFIDFile): String = file.s3SourceBucketKey match {
     case Some(v) => v
     case _ => s"${file.userId}/${file.consignmentId}/${file.fileId}"
   }
