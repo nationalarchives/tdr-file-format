@@ -133,6 +133,10 @@ class LambdaTest extends AnyFlatSpec with BeforeAndAfterEach with BeforeAndAfter
       testValidFileFormatEvent("ffid_event", fileName, expectedPuids)
     }
 
+    "The process method" should s"put return the correct format for $fileName where S3 source bucket and key are overridden" in {
+      testValidFileFormatEvent("ffid_event_s3_source_detail", fileName, expectedPuids)
+    }
+
     "The process method" should s"return the correct format for a nested directory for $fileName" in {
       testValidFileFormatEvent("ffid_nested_directory_event", fileName, expectedPuids)
     }
