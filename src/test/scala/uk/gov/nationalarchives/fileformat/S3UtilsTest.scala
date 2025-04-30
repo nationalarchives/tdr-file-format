@@ -43,7 +43,7 @@ class S3UtilsTest extends AnyFlatSpec with MockitoSugar with EitherValues {
     when(s3Client.getObject(requestCaptor.capture(), pathCaptor.capture())).thenReturn(GetObjectResponse.builder.build())
 
     val bucketOverride = "sourcebucket"
-    val bucketKeyOverride = "/bucket/key/value"
+    val bucketKeyOverride = "bucket/key/value"
     val rootDirectory = "root"
     val path = "path"
     val utils = new S3Utils(s3Client, bucketOverride, rootDirectory)
