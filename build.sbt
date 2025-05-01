@@ -35,7 +35,7 @@ lazy val root = (project in file("."))
   )
 
 //Override out of date transitory dependencies with vulnerabilities
-dependencyOverrides += "org.apache.commons" % "commons-configuration2" % "2.11.0"
+dependencyOverrides += "org.apache.commons" % "commons-configuration2" % "2.12.0"
 dependencyOverrides += "commons-logging" % "commons-logging" % "1.3.5"
 
 (Test / fork) := true
