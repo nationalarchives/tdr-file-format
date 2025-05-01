@@ -67,10 +67,10 @@ class LambdaTest extends AnyFlatSpec with BeforeAndAfterEach with BeforeAndAfter
     wiremockS3.stop()
   }
 
-  def mockFileDownload(ffidFile: FFIDFile, fileName: String): StubMapping = {
+  def mockFileDownload(fileName: String, urlStub: String): StubMapping = {
     val filePath = s"./src/test/resources/testfiles/$fileName"
     val bytes = Files.readAllBytes(Paths.get(filePath))
-    wiremockS3.stubFor(get(urlEqualTo(s"/${ffidFile.userId}/${ffidFile.consignmentId}/${ffidFile.fileId}"))
+    wiremockS3.stubFor(get(urlEqualTo(urlStub))
       .willReturn(aResponse().withStatus(200).withBody(bytes))
     )
   }
@@ -95,8 +95,12 @@ class LambdaTest extends AnyFlatSpec with BeforeAndAfterEach with BeforeAndAfter
 
   def testValidFileFormatEvent(eventName: String, fileName: String, expectedPuids: List[String]): Unit = {
     val ffidFile = decodeInputJson(eventName)
+    val urlStub = ffidFile.s3SourceBucketKey match {
+      case Some(v) => s"/$v"
+      case _ => s"/${ffidFile.userId}/${ffidFile.consignmentId}/${ffidFile.fileId}"
+    }
     val fileWithReplacedSuffix = ffidFile.copy(originalPath = ffidFile.originalPath.replace("{suffix}", fileName.split("\\.").last))
-    mockFileDownload(fileWithReplacedSuffix, fileName)
+    mockFileDownload(fileName, urlStub)
     val outputStream = new ByteArrayOutputStream()
     new Lambda().process(createEvent(fileWithReplacedSuffix), outputStream)
     val decodedOutput = decodeOutput(outputStream)
@@ -131,6 +135,10 @@ class LambdaTest extends AnyFlatSpec with BeforeAndAfterEach with BeforeAndAfter
   forAll(testFiles) { (fileName, expectedPuids) =>
     "The process method" should s"put return the correct format for $fileName" in {
       testValidFileFormatEvent("ffid_event", fileName, expectedPuids)
+    }
+
+    "The process method" should s"put return the correct format for $fileName where S3 source bucket and key are overridden" in {
+      testValidFileFormatEvent("ffid_event_s3_source_detail", fileName, expectedPuids)
     }
 
     "The process method" should s"return the correct format for a nested directory for $fileName" in {

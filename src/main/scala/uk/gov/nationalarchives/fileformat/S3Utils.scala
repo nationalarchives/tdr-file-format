@@ -15,6 +15,16 @@ class S3Utils(s3Client: S3Client, bucketName: String, rootDirectory: String) {
 
   val logger: Logger = Logger[S3Utils]
 
+  private def s3BucketOverride(file: FFIDFile): String = file.s3SourceBucket match {
+    case Some(v) => v
+    case _ => bucketName
+  }
+
+  private def s3ObjectKeyOverride(file: FFIDFile): String = file.s3SourceBucketKey match {
+    case Some(v) => v
+    case _ => s"${file.userId}/${file.consignmentId}/${file.fileId}"
+  }
+
   def downloadFile(file: FFIDFile): Either[Throwable, Unit] = {
     val outputPath = Paths.get(s"$rootDirectory/${file.originalPath}")
     val originalFile = new File(outputPath.toString)
@@ -23,8 +33,8 @@ class S3Utils(s3Client: S3Client, bucketName: String, rootDirectory: String) {
       Right()
     } else {
       val request = GetObjectRequest.builder
-        .bucket(bucketName)
-        .key(s"${file.userId}/${file.consignmentId}/${file.fileId}")
+        .bucket(s3BucketOverride(file))
+        .key(s3ObjectKeyOverride(file))
         .build()
 
       val outputDirectory = file.originalPath.split("/").init.mkString("/")
