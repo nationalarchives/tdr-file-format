@@ -4,22 +4,23 @@ import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import graphql.codegen.types.FFIDMetadataInputValues
+import io.circe.Printer
 import io.circe.generic.auto._
 import io.circe.parser.decode
 import io.circe.syntax._
-import io.circe.{DecodingFailure, Printer}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers.{equal, _}
-import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor2}
+import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
+import uk.gov.nationalarchives.droid.internal.api.DroidAPI
 import uk.gov.nationalarchives.fileformat.FFIDExtractor.FFIDFile
 import uk.gov.nationalarchives.fileformat.Lambda.FFIDResult
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, File, RandomAccessFile}
 import java.net.URI
-import java.nio.file.{Files, Paths}
+import java.nio.file.{Files, Path, Paths}
 import java.util
 import java.util.UUID
 import scala.io.Source.{fromFile, fromResource}
@@ -28,9 +29,18 @@ import scala.reflect.io.Directory
 import scala.util.{Failure, Success, Using}
 
 class TestUtils extends AnyFlatSpec with BeforeAndAfterEach with BeforeAndAfterAll with TableDrivenPropertyChecks {
+  val testBinarySignatureVersion = "./src/test/resources/containers/droid_signatures.xml"
+  val testContainerSignatureVersion = "./src/test/resources/containers/container_signatures.xml"
+
   val s3Client: S3Client = S3Client.builder
     .region(Region.EU_WEST_2)
     .endpointOverride(URI.create("http://localhost:8003/"))
+    .build()
+
+  val api = DroidAPI.builder()
+    .containerSignature(Path.of(testContainerSignatureVersion))
+    .binarySignature(Path.of(testBinarySignatureVersion))
+    .s3Client(s3Client)
     .build()
 
   val wiremockS3 = new WireMockServer(8003)
@@ -45,9 +55,9 @@ class TestUtils extends AnyFlatSpec with BeforeAndAfterEach with BeforeAndAfterA
   val tnaCdn: WireMockServer = {
     val tnaCdn = new WireMockServer(9002)
     val path = "./src/test/resources/containers"
-    tnaCdn.stubFor(get(urlEqualTo("/droid_signatures.xml"))
+    tnaCdn.stubFor(get(urlEqualTo("/DROID_SignatureFile_V1.xml"))
       .willReturn(okXml(getFile(s"$path/droid_signatures.xml"))))
-    tnaCdn.stubFor(get(urlEqualTo("/container_signatures.xml"))
+    tnaCdn.stubFor(get(urlEqualTo("/container-signature-1.xml"))
       .willReturn(okXml(getFile(s"$path/container_signatures.xml"))))
     tnaCdn
   }
@@ -77,19 +87,6 @@ class TestUtils extends AnyFlatSpec with BeforeAndAfterEach with BeforeAndAfterA
     wiremockS3.stop()
   }
 
-//  String[] rangeArr = range.split("=")[1].split("-");
-//  int rangeStart = Integer.parseInt(rangeArr[0]);
-//  int rangeEnd = Integer.parseInt(rangeArr[1]);
-//  int length = rangeEnd - rangeStart + 1;
-//  try (RandomAccessFile raf = new RandomAccessFile(filePath, "r")) {
-//    raf.seek(rangeStart);
-//    byte[] buffer = new byte[length];
-//    int bytesRead = raf.read(buffer);
-//    return bytesRead == length ? buffer : Arrays.copyOf(buffer, bytesRead);
-//  } catch (IOException | NegativeArraySizeException e) {
-//    return new byte[0];
-//  }
-
   def getBytesForRange(filePath: String, range: String): Array[Byte] = {
     val rangeArr: Array[String] = range.split("=")(1).split("-")
     val rangeStart = rangeArr(0).toInt
@@ -100,7 +97,7 @@ class TestUtils extends AnyFlatSpec with BeforeAndAfterEach with BeforeAndAfterA
       raf.seek(rangeStart)
       val buffer: Array[Byte] = new Array[Byte](length)
       raf.read(buffer) match {
-        case br: Int if br == length => return buffer
+        case br: Int if br == length => buffer
         case br: Int => util.Arrays.copyOf(buffer, br)
         case _ => new Array[Byte](0)
       }
@@ -164,8 +161,9 @@ class TestUtils extends AnyFlatSpec with BeforeAndAfterEach with BeforeAndAfterA
     }
     val fileWithReplacedSuffix = ffidFile.copy(originalPath = ffidFile.originalPath.replace("{suffix}", fileName.split("\\.").last))
     stubS3GetBytes(fileName, urlStub)
+    stubS3GetObjectList(ffidFile.userId, ffidFile.consignmentId, List(ffidFile.fileId))
     val outputStream = new ByteArrayOutputStream()
-    new Lambda().process(createEvent(fileWithReplacedSuffix), outputStream)
+    new Lambda(api).process(createEvent(fileWithReplacedSuffix), outputStream)
     val decodedOutput = decodeOutput(outputStream)
     decodedOutput.matches.size should equal(expectedPuids.size)
     expectedPuids.foreach(puid => {

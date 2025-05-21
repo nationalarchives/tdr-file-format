@@ -10,7 +10,7 @@ import uk.gov.nationalarchives.fileformat.FFIDExtractor._
 import java.net.URI
 import java.util.UUID
 import scala.jdk.CollectionConverters._
-import scala.util.{Failure, Success, Try}
+import scala.util.Try
 
 class FFIDExtractor(api: DroidAPI, bucketName: String) {
   private def s3BucketOverride(file: FFIDFile): String = file.s3SourceBucket match {
@@ -64,22 +64,9 @@ object FFIDExtractor {
   case class FFIDFile(consignmentId: UUID, fileId: UUID, originalPath: String, userId: UUID, s3SourceBucket: Option[String] = None, s3SourceBucketKey: Option[String] = None)
 
   val logger: Logger = Logger[FFIDExtractor]
-  private val signatureFiles = SignatureFiles()
   private val bucketName = configFactory.getString("s3.bucket")
 
-  def apply(): FFIDExtractor = {
-    val api: DroidAPI = (for {
-      containerPath <- signatureFiles.downloadSignatureFile("container")
-      sigPath <- signatureFiles.downloadSignatureFile("droid")
-    } yield DroidAPI.builder()
-      .containerSignature(containerPath)
-      .binarySignature(sigPath)
-      .build()) match {
-      case Failure(exception) =>
-        logger.error("Error getting the droid API", exception)
-        throw new RuntimeException(exception.getMessage)
-      case Success(api) => api
-    }
+  def apply(api: DroidAPI): FFIDExtractor = {
     new FFIDExtractor(api, bucketName)
   }
 }

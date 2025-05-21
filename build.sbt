@@ -28,7 +28,8 @@ lazy val root = (project in file("."))
       apacheCommons % Test,
       scalaTest % Test,
       mockito % Test,
-      wiremock % Test
+      wiremock % Test,
+      byteBuddy % Test
     )
   )
 
