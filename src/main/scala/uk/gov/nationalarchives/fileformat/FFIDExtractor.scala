@@ -7,20 +7,30 @@ import net.logstash.logback.argument.StructuredArguments.value
 import uk.gov.nationalarchives.droid.internal.api.{ApiResult, DroidAPI}
 import uk.gov.nationalarchives.fileformat.FFIDExtractor._
 
-import java.nio.file.Paths
+import java.net.URI
 import java.util.UUID
 import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Try}
 
-class FFIDExtractor(api: DroidAPI, rootDirectory: String) {
+class FFIDExtractor(api: DroidAPI, bucketName: String) {
+  private def s3BucketOverride(file: FFIDFile): String = file.s3SourceBucket match {
+    case Some(v) => v
+    case _ => bucketName
+  }
+
+  private def s3ObjectKeyOverride(file: FFIDFile): String = file.s3SourceBucketKey match {
+    case Some(v) => v
+    case _ => s"${file.userId}/${file.consignmentId}/${file.fileId}"
+  }
 
   def ffidFile(file: FFIDFile): Either[Throwable, FFIDMetadataInputValues] = {
     Try {
-      val outputPath = Paths.get(s"$rootDirectory/${file.originalPath}")
+      val s3Bucket = s3BucketOverride(file)
+      val s3ObjectPrefix = s3ObjectKeyOverride(file)
       val droidVersion = api.getDroidVersion
       val containerSignatureVersion = api.getContainerSignatureVersion
       val droidSignatureVersion = api.getBinarySignatureVersion
-      val results: List[ApiResult] = api.submit(outputPath).asScala.toList
+      val results: List[ApiResult] = api.submit(URI.create(s"s3://$s3Bucket/$s3ObjectPrefix")).asScala.toList
 
       val matches = results match {
         case Nil => List(FFIDMetadataInputMatches(None, "", None, None, None))
@@ -49,24 +59,27 @@ class FFIDExtractor(api: DroidAPI, rootDirectory: String) {
 }
 
 object FFIDExtractor {
-  val configFactory: Config = ConfigFactory.load
+  private val configFactory: Config = ConfigFactory.load
 
   case class FFIDFile(consignmentId: UUID, fileId: UUID, originalPath: String, userId: UUID, s3SourceBucket: Option[String] = None, s3SourceBucketKey: Option[String] = None)
 
   val logger: Logger = Logger[FFIDExtractor]
-  val rootDirectory: String = configFactory.getString("root.directory")
   private val signatureFiles = SignatureFiles()
+  private val bucketName = configFactory.getString("s3.bucket")
 
   def apply(): FFIDExtractor = {
     val api: DroidAPI = (for {
       containerPath <- signatureFiles.downloadSignatureFile("container")
       sigPath <- signatureFiles.downloadSignatureFile("droid")
-    } yield DroidAPI.getInstance(sigPath, containerPath)) match {
+    } yield DroidAPI.builder()
+      .containerSignature(containerPath)
+      .binarySignature(sigPath)
+      .build()) match {
       case Failure(exception) =>
         logger.error("Error getting the droid API", exception)
         throw new RuntimeException(exception.getMessage)
       case Success(api) => api
     }
-    new FFIDExtractor(api, rootDirectory)
+    new FFIDExtractor(api, bucketName)
   }
 }

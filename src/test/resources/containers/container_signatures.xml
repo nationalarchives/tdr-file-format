@@ -1,6 +1,9 @@
 <ContainerSignatureMapping schemaVersion="1.0" signatureVersion="30">
   <ContainerSignatures>
-
+    <ContainerSignature Id="3060" ContainerType="ZIP">
+      <Description>Zip</Description>
+      <Files/>
+    </ContainerSignature>
   </ContainerSignatures>
   <FileFormatMappings>
 

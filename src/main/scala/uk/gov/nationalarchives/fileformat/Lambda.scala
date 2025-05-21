@@ -13,13 +13,9 @@ import scala.io.Source
 import scala.language.postfixOps
 
 class Lambda {
-
-  val s3Utils: S3Utils = S3Utils()
-
   private val ffidExtractor: FFIDExtractor = FFIDExtractor()
 
   private def extractFFID(ffidFile: FFIDFile): Either[Throwable, FFIDMetadataInputValues] = for {
-    _ <- s3Utils.downloadFile(ffidFile)
     metadata <- ffidExtractor.ffidFile(ffidFile)
   } yield metadata
 
@@ -34,6 +30,7 @@ class Lambda {
     }
   }
 }
+
 object Lambda {
   case class FFIDResult(fileFormat: FFIDMetadataInputValues)
 }
