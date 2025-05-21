@@ -13,6 +13,7 @@ jobs:
     uses: nationalarchives/tdr-github-actions/.github/workflows/tdr_test.yml@main
     with:
       repo-name: tdr-file-format
+      java-version: '21'
       test-command: |
         sbt test
     secrets:
