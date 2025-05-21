@@ -15,6 +15,6 @@ jobs:
       repo-name: tdr-file-format
       java-version: '21'
       test-command: |
-        sbt test
+        AWS_REGION=eu-west-2 AWS_ACCESS_KEY_ID=test AWS_SECRET_ACCESS_KEY=test sbt test
     secrets:
       SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}

@@ -2,6 +2,7 @@ package uk.gov.nationalarchives.fileformat
 
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock._
+import com.github.tomakehurst.wiremock.http.{HttpHeader, HttpHeaders}
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import graphql.codegen.types.FFIDMetadataInputValues
 import io.circe.Printer
@@ -24,7 +25,7 @@ import java.nio.file.{Files, Path, Paths}
 import java.util
 import java.util.UUID
 import scala.io.Source.{fromFile, fromResource}
-import scala.jdk.CollectionConverters.{ListHasAsScala, MapHasAsJava}
+import scala.jdk.CollectionConverters.{IterableHasAsJava, ListHasAsScala, MapHasAsJava}
 import scala.reflect.io.Directory
 import scala.util.{Failure, Success, Using}
 
@@ -104,14 +105,32 @@ class TestUtils extends AnyFlatSpec with BeforeAndAfterEach with BeforeAndAfterA
     }
   }
 
-  def stubS3GetBytes(fileName: String, urlStub: String): StubMapping = {
+  def stubS3HeadObject(fileName: String, urlStub: String): StubMapping = {
+    val filePath = s"./src/test/resources/testfiles/$fileName"
+    val bytes = Files.readAllBytes(Paths.get(filePath))
+    wiremockS3.stubFor(head(urlEqualTo(urlStub))
+      .willReturn(aResponse()
+        .withStatus(200)
+        .withHeaders(new HttpHeaders(List(new HttpHeader("Content-Length", bytes.size.toString), new HttpHeader("Last-Modified", "Mon, 03 Mar 2025 17:29:48 GMT")).asJava))
+        .withBody("".getBytes)
+      )
+    )
+  }
+
+  def stubS3GetBytes(fileName: String, urlStub: String): Unit = {
     val filePath = s"./src/test/resources/testfiles/$fileName"
     val bytes = Files.readAllBytes(Paths.get(filePath))
 
-    wiremockS3.stubFor(get(urlEqualTo(urlStub))
+    wiremockS3.stubFor(get(urlEqualTo(urlStub)).withHeader("range", equalTo("bytes=0-4095"))
       .willReturn(aResponse()
         .withStatus(200)
-        .withBody(bytes)
+        .withBody(bytes.slice(0, math.min(bytes.size, 4096))),
+      )
+    )
+    wiremockS3.stubFor(get(urlEqualTo(urlStub)).withHeader("range", equalTo("bytes=4096-8191"))
+      .willReturn(aResponse()
+        .withStatus(200)
+        .withBody(bytes.slice(4096, math.min(bytes.size, 8192))),
       )
     )
   }
@@ -161,6 +180,7 @@ class TestUtils extends AnyFlatSpec with BeforeAndAfterEach with BeforeAndAfterA
     }
     val fileWithReplacedSuffix = ffidFile.copy(originalPath = ffidFile.originalPath.replace("{suffix}", fileName.split("\\.").last))
     stubS3GetBytes(fileName, urlStub)
+    stubS3HeadObject(fileName, urlStub)
     stubS3GetObjectList(ffidFile.userId, ffidFile.consignmentId, List(ffidFile.fileId))
     val outputStream = new ByteArrayOutputStream()
     new Lambda(api).process(createEvent(fileWithReplacedSuffix), outputStream)

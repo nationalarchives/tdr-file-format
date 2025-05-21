@@ -1,13 +1,51 @@
 <ContainerSignatureMapping schemaVersion="1.0" signatureVersion="30">
   <ContainerSignatures>
-    <ContainerSignature Id="3060" ContainerType="ZIP">
-      <Description>Zip</Description>
-      <Files/>
+    <ContainerSignature Id="1030" ContainerType="ZIP">
+      <Description>Microsoft Word OOXML</Description>
+      <Files>
+        <File>
+          <Path>[Content_Types].xml</Path>
+          <BinarySignatures>
+            <InternalSignatureCollection>
+              <InternalSignature ID="302">
+                <ByteSequence Reference="BOFoffset">
+                  <SubSequence Position="1" SubSeqMinOffset="0"
+                               SubSeqMaxOffset="32768">
+                    <Sequence>'ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"'</Sequence>
+                  </SubSequence>
+                </ByteSequence>
+              </InternalSignature>
+            </InternalSignatureCollection>
+          </BinarySignatures>
+        </File>
+      </Files>
+    </ContainerSignature>
+    <ContainerSignature Id="2030" ContainerType="ZIP">
+      <Description>Microsoft Excel OOXML</Description>
+      <Files>
+        <File>
+          <Path>[Content_Types].xml</Path>
+          <BinarySignatures>
+            <InternalSignatureCollection>
+              <InternalSignature ID="317">
+                <ByteSequence Reference="BOFoffset">
+                  <SubSequence Position="1" SubSeqMinOffset="0"
+                               SubSeqMaxOffset="40000">
+                    <Sequence>'ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"'</Sequence>
+                  </SubSequence>
+                </ByteSequence>
+              </InternalSignature>
+            </InternalSignatureCollection>
+          </BinarySignatures>
+        </File>
+      </Files>
     </ContainerSignature>
   </ContainerSignatures>
   <FileFormatMappings>
-
+    <FileFormatMapping signatureId="1030" Puid="fmt/412"/>
+    <FileFormatMapping signatureId="2030" Puid="fmt/214"/>
   </FileFormatMappings>
   <TriggerPuids>
+    <TriggerPuid ContainerType="ZIP" Puid="x-fmt/263"/>
   </TriggerPuids>
 </ContainerSignatureMapping>

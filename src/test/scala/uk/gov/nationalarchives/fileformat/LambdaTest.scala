@@ -17,14 +17,14 @@ class LambdaTest extends TestUtils with TableDrivenPropertyChecks {
     val exception = intercept[RuntimeException] {
       new Lambda(api).process(createEvent(decodeInputJson("ffid_missing_file")), null)
     }
-    exception.getMessage should equal("(Service: S3, Status Code: 404, Request ID: null) (SDK Attempt Count: 1)")
+    exception.getMessage should equal("Error processing file id ed66ade1-1984-4f7c-947c-54101148bef0 with original path nonExistentFile")
   }
 
   val testFiles: TableFor2[String, List[String]] = Table(
     ("FileName", "ExpectedPuids"),
     ("Test.docx", List("fmt/412")),
     ("Test.xlsx", List("fmt/214")),
-    ("Test.pdf", List("fmt/276"))
+    ("Test.pdf", List("fmt/18"))
   )
 
   forAll(testFiles) { (fileName, expectedPuids) =>

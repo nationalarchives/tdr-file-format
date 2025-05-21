@@ -1,23 +1,48 @@
 <FFSignatureFile xmlns="http://www.nationalarchives.gov.uk/pronom/SignatureFile" DateCreated="2022-07-21T11:50:18"
                  Version="107">
   <InternalSignatureCollection>
-    <InternalSignature ID="9" Specificity="Specific">
+    <InternalSignature ID="2" Specificity="Specific">
       <ByteSequence Reference="BOFoffset">
+        <SubSequence Position="1" MinFragLength="0" SubSeqMinOffset="0" SubSeqMaxOffset="4">
+          <Sequence>504B0304</Sequence>
+        </SubSequence>
+      </ByteSequence>
+      <ByteSequence Reference="EOFoffset">
+        <SubSequence Position="1" MinFragLength="0" SubSeqMinOffset="61" SubSeqMaxOffset="65565">
+          <Sequence>504B01</Sequence>
+        </SubSequence>
+      </ByteSequence>
+      <ByteSequence Reference="EOFoffset">
+        <SubSequence Position="1" MinFragLength="0" SubSeqMinOffset="0" SubSeqMaxOffset="65535">
+          <Sequence>504B0506</Sequence>
+        </SubSequence>
       </ByteSequence>
     </InternalSignature>
+    <InternalSignature ID="20" Specificity="Specific">
+      <ByteSequence Reference="BOFoffset">
+        <SubSequence MinFragLength="0" Position="1"
+                     SubSeqMaxOffset="0" SubSeqMinOffset="0">
+          <Sequence>255044462D312E34</Sequence>
+        </SubSequence>
+      </ByteSequence>
+    </InternalSignature>
+
   </InternalSignatureCollection>
   <FileFormatCollection>
-    <FileFormat ID="163" MIMEType="text/plain" Name="Plain Text File" PUID="x-fmt/111">
-      <Extension>txt</Extension>
-    </FileFormat>
     <FileFormat ID="1160" MIMEType="application/vnd.openxmlformats-officedocument.wordprocessingml.document" Name="Microsoft Word for Windows" PUID="fmt/412" Version="2007 onwards">
       <Extension>docx</Extension>
     </FileFormat>
     <FileFormat ID="940" MIMEType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" Name="Microsoft Excel for Windows" PUID="fmt/214" Version="2007 onwards">
       <Extension>xlsx</Extension>
     </FileFormat>
-    <FileFormat ID="1016" MIMEType="application/pdf" Name="Acrobat PDF 1.7 - Portable Document Format" PUID="fmt/276" Version="1.7">
+    <FileFormat ID="617" MIMEType="application/pdf" Name="Acrobat PDF 1.4 - Portable Document Format" PUID="fmt/18" Version="1.4">
+      <InternalSignatureID>20</InternalSignatureID>
       <Extension>pdf</Extension>
+    </FileFormat>
+
+    <FileFormat ID="2" Name="ZIP Format" PUID="x-fmt/263" Version="" MIMEType="application/zip">
+      <InternalSignatureID>2</InternalSignatureID>
+      <Extension>zip</Extension>
     </FileFormat>
   </FileFormatCollection>
 </FFSignatureFile>
