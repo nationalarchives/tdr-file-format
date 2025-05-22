@@ -33,10 +33,6 @@ lazy val root = (project in file("."))
     )
   )
 
-//Override out of date transitory dependencies with vulnerabilities
-dependencyOverrides += "org.apache.commons" % "commons-configuration2" % "2.12.0"
-dependencyOverrides += "commons-logging" % "commons-logging" % "1.3.5"
-
 (Test / fork) := true
 (Test / javaOptions) += s"-Dconfig.file=${sourceDirectory.value}/test/resources/application.conf"
 (Test / envVars) := Map("AWS_ACCESS_KEY_ID" -> "accesskey", "AWS_SECRET_ACCESS_KEY" -> "secret")
