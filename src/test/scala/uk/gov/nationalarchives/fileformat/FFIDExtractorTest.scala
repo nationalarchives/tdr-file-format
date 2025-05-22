@@ -79,7 +79,7 @@ class FFIDExtractorTest extends TestUtils with MockitoSugar with EitherValues {
       res <- new ApiResult(s"extension$count", IdentificationMethod.EXTENSION, s"puid$count", s"testName$count", false, mockUri) :: Nil
     } yield res
 
-    when(api.submit(any[URI])).thenReturn(apiResults.asJava)
+    when(api.submit(any[URI], any[String])).thenReturn(apiResults.asJava)
 
     val result = new FFIDExtractor(api, bucketName).ffidFile(ffidFile)
     val ffid = result.right.value
@@ -88,7 +88,7 @@ class FFIDExtractorTest extends TestUtils with MockitoSugar with EitherValues {
 
   "The ffid method" should "return an error if there is an error running the droid commands" in {
     val api = mock[DroidAPI]
-    when(api.submit(any[URI])).thenThrow(new Exception("Droid error processing files"))
+    when(api.submit(any[URI], any[String])).thenThrow(new Exception("Droid error processing files"))
     val file = ffidFile
     val result = new FFIDExtractor(api, bucketName).ffidFile(file)
     result.left.value.getMessage should equal(s"Error processing file id ${file.fileId} with original path originalPath")

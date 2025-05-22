@@ -8,6 +8,7 @@ import uk.gov.nationalarchives.droid.internal.api.{ApiResult, DroidAPI}
 import uk.gov.nationalarchives.fileformat.FFIDExtractor._
 
 import java.net.URI
+import java.nio.file.Paths
 import java.util.UUID
 import scala.jdk.CollectionConverters._
 import scala.util.Try
@@ -23,14 +24,19 @@ class FFIDExtractor(api: DroidAPI, bucketName: String) {
     case _ => s"${file.userId}/${file.consignmentId}/${file.fileId}"
   }
 
+  private def fileExtension(filePath: String): String= {
+    Paths.get(filePath).getFileName.toString.split("\\.").last
+  }
+
   def ffidFile(file: FFIDFile): Either[Throwable, FFIDMetadataInputValues] = {
     Try {
       val s3Bucket = s3BucketOverride(file)
       val s3ObjectPrefix = s3ObjectKeyOverride(file)
+      val extension = fileExtension(file.originalPath)
       val droidVersion = api.getDroidVersion
       val containerSignatureVersion = api.getContainerSignatureVersion
       val droidSignatureVersion = api.getBinarySignatureVersion
-      val results: List[ApiResult] = api.submit(URI.create(s"s3://$s3Bucket/$s3ObjectPrefix")).asScala.toList
+      val results: List[ApiResult] = api.submit(URI.create(s"s3://$s3Bucket/$s3ObjectPrefix"), extension).asScala.toList
 
       val matches = results match {
         case Nil => List(FFIDMetadataInputMatches(None, "", None, None, None))

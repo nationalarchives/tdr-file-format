@@ -172,7 +172,7 @@ class TestUtils extends AnyFlatSpec with BeforeAndAfterEach with BeforeAndAfterA
     case Right(value) => value.fileFormat
   }
 
-  def testValidFileFormatEvent(eventName: String, fileName: String, expectedPuids: List[String]): Unit = {
+  def testValidFileFormatEvent(eventName: String, fileName: String, expectedPuids: List[String], expectedFileExtensionMismatch: Boolean): Unit = {
     val ffidFile = decodeInputJson(eventName)
     val urlStub = ffidFile.s3SourceBucketKey match {
       case Some(v) => s"/$v"
@@ -186,6 +186,8 @@ class TestUtils extends AnyFlatSpec with BeforeAndAfterEach with BeforeAndAfterA
     new Lambda(api).process(createEvent(fileWithReplacedSuffix), outputStream)
     val decodedOutput = decodeOutput(outputStream)
     decodedOutput.matches.size should equal(expectedPuids.size)
+    val x = decodedOutput.matches.map(_.fileExtensionMismatch)
+    decodedOutput.matches.exists(_.fileExtensionMismatch == Option(expectedFileExtensionMismatch)) should equal(true)
     expectedPuids.foreach(puid => {
       decodedOutput.matches.exists(_.puid == Option(puid)) should equal(true)
     })
