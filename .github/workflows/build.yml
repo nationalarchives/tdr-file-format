@@ -13,6 +13,7 @@ jobs:
       lambda-name: file-format-v2
       repo-name: tdr-file-format
       artifact-name: file-format
+      java-version: '21'
       build-command: |
         sbt assembly
     secrets:
