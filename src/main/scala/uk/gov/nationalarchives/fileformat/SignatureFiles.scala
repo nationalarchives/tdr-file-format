@@ -10,8 +10,6 @@ import java.net.http.HttpResponse.BodyHandlers
 import java.net.http.{HttpClient, HttpRequest}
 import java.nio.file.StandardOpenOption._
 import java.nio.file.{Path, Paths}
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import scala.util.Try
 
 class SignatureFiles(client: HttpClient, existingFiles: List[File]) {
@@ -39,10 +37,8 @@ object SignatureFiles {
   val config: Config = ConfigFactory.load()
   private val containerSignaturePrefix = "container-signature-"
   private val droidSignaturePrefix = "DROID_SignatureFile_V"
-  val rootDirectory: String = config.getString("root.directory")
+  private val rootDirectory: String = config.getString("root.directory")
   val logger: Logger = Logger[SignatureFiles]
-  private val nationalArchivesUrl = config.getString("signatures.nationalArchivesUrl")
-
 
   def apply(): SignatureFiles = {
     val filter: FilenameFilter = (_: File, name: String) =>
