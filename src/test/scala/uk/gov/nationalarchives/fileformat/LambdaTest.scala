@@ -2,12 +2,11 @@ package uk.gov.nationalarchives.fileformat
 
 import io.circe.DecodingFailure
 import org.scalatest.matchers.should.Matchers.{equal, _}
-import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor3}
 
-class LambdaTest extends TestUtils with TableDrivenPropertyChecks {
+class LambdaTest extends TestUtils {
   "The process method" should "return an error if the consignment id is invalid" in {
     val exception = intercept[DecodingFailure] {
-      new Lambda(api).process(createEvent(decodeInputJson("ffid_invalid_consignment_id")), null)
+      new Lambda().process(createEvent(decodeInputJson("ffid_invalid_consignment_id")), null)
     }
     exception.getMessage should equal("DecodingFailure at .consignmentId: Got value '\"1\"' with wrong type, expecting string")
   }
@@ -15,37 +14,22 @@ class LambdaTest extends TestUtils with TableDrivenPropertyChecks {
   "The process method" should "return an error if the file id is missing" in {
     mockS3Error()
     val exception = intercept[RuntimeException] {
-      new Lambda(api).process(createEvent(decodeInputJson("ffid_missing_file")), null)
+      new Lambda().process(createEvent(decodeInputJson("ffid_missing_file")), null)
     }
     exception.getMessage should equal("Error processing file id ed66ade1-1984-4f7c-947c-54101148bef0 with original path nonExistentFile")
   }
 
-  val testFiles: TableFor3[String, List[String], Boolean] = Table(
-    ("FileName", "ExpectedPuids", "FileExtensionMismatch"),
-    ("Test.docx", List("fmt/412"), false),
-    ("Test.xlsx", List("fmt/214"), false),
-    ("Test.pdf", List("fmt/18"), false)
-  )
-
-  forAll(testFiles) { (fileName, expectedPuids, fileExtensionMismatch) =>
-    "The process method" should s"put return the correct format for $fileName" in {
-      testValidFileFormatEvent("ffid_event", fileName, expectedPuids, fileExtensionMismatch)
+  "The process method" should "return an error if the original path is missing" in {
+    val exception = intercept[DecodingFailure] {
+      new Lambda().process(createEvent(decodeInputJson("ffid_event_missing_original_path")), null)
     }
+    exception.getMessage should equal("DecodingFailure at .originalPath: Missing required field")
+  }
 
-    "The process method" should s"put return the correct format for $fileName where S3 source bucket and key are overridden" in {
-      testValidFileFormatEvent("ffid_event_s3_source_detail", fileName, expectedPuids, fileExtensionMismatch)
+  "The process method" should "return an error if the user id is missing" in {
+    val exception = intercept[DecodingFailure] {
+      new Lambda().process(createEvent(decodeInputJson("ffid_event_missing_user_id")), null)
     }
-
-    "The process method" should s"return the correct format for a nested directory for $fileName" in {
-      testValidFileFormatEvent("ffid_nested_directory_event", fileName, expectedPuids, fileExtensionMismatch)
-    }
-
-    "The process method" should s"return the correct format for a file with a backtick for $fileName" in {
-      testValidFileFormatEvent("ffid_path_with_backtick_event", fileName, expectedPuids, fileExtensionMismatch)
-    }
-
-    "The process method" should s"return the correct format for a file with a space for $fileName" in {
-      testValidFileFormatEvent("ffid_path_with_space_event", fileName, expectedPuids, fileExtensionMismatch)
-    }
+    exception.getMessage should equal("DecodingFailure at .userId: Missing required field")
   }
 }

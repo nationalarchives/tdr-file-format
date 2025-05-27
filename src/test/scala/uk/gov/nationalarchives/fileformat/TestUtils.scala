@@ -172,7 +172,7 @@ class TestUtils extends AnyFlatSpec with BeforeAndAfterEach with BeforeAndAfterA
     case Right(value) => value.fileFormat
   }
 
-  def testValidFileFormatEvent(eventName: String, fileName: String, expectedPuids: List[String], expectedFileExtensionMismatch: Boolean): Unit = {
+  def testFFIDExtractResult(eventName: String, fileName: String, expectedPuids: List[String], expectedFileExtensionMismatch: Boolean): Unit = {
     val ffidFile = decodeInputJson(eventName)
     val urlStub = ffidFile.s3SourceBucketKey match {
       case Some(v) => s"/$v"
@@ -182,15 +182,11 @@ class TestUtils extends AnyFlatSpec with BeforeAndAfterEach with BeforeAndAfterA
     stubS3GetBytes(fileName, urlStub)
     stubS3HeadObject(fileName, urlStub)
     stubS3GetObjectList(ffidFile.userId, ffidFile.consignmentId, List(ffidFile.fileId))
-    val outputStream = new ByteArrayOutputStream()
-    new Lambda(api).process(createEvent(fileWithReplacedSuffix), outputStream)
-    val decodedOutput = decodeOutput(outputStream)
-    decodedOutput.matches.size should equal(expectedPuids.size)
-    val x = decodedOutput.matches.map(_.fileExtensionMismatch)
-    decodedOutput.matches.exists(_.fileExtensionMismatch == Option(expectedFileExtensionMismatch)) should equal(true)
-    expectedPuids.foreach(puid => {
-      decodedOutput.matches.exists(_.puid == Option(puid)) should equal(true)
+    val result = new FFIDExtractor(api, "testbucket").ffidFile(fileWithReplacedSuffix)
+    result.foreach(v => {
+      v.matches.size should equal(expectedPuids.size)
+      v.matches.exists(_.fileExtensionMismatch == Option(expectedFileExtensionMismatch)) should equal(true)
+      expectedPuids.foreach(puid => v.matches.exists(_.puid == Option(puid)) should equal (true))
     })
   }
-
 }
