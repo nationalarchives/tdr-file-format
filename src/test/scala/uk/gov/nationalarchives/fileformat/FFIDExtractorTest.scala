@@ -4,6 +4,7 @@ import org.mockito.ArgumentMatchers.any
 import org.mockito.MockitoSugar
 import org.scalatest.EitherValues
 import org.scalatest.matchers.should.Matchers._
+import org.scalatest.prop.TableFor3
 import uk.gov.nationalarchives.droid.core.interfaces.IdentificationMethod
 import uk.gov.nationalarchives.droid.internal.api.{ApiResult, DroidAPI}
 import uk.gov.nationalarchives.fileformat.FFIDExtractor.FFIDFile
@@ -101,6 +102,35 @@ class FFIDExtractorTest extends TestUtils with MockitoSugar with EitherValues {
 
     val result = new FFIDExtractor(api, bucketName).ffidFile(ffidFileWithQuote)
     result.isRight should be(true)
+  }
+
+  val testFiles: TableFor3[String, List[String], Boolean] = Table(
+    ("FileName", "ExpectedPuids", "FileExtensionMismatch"),
+    ("Test.docx", List("fmt/412"), false),
+    ("Test.xlsx", List("fmt/214"), false),
+    ("Test.pdf", List("fmt/18"), false)
+  )
+
+  forAll(testFiles) { (fileName, expectedPuids, fileExtensionMismatch) =>
+    "The ffid method" should s"put return the correct format for $fileName" in {
+      testFFIDExtractResult("ffid_event", fileName, expectedPuids, fileExtensionMismatch)
+    }
+
+    "The ffid method" should s"put return the correct format for $fileName where S3 source bucket and key are overridden" in {
+      testFFIDExtractResult("ffid_event_s3_source_detail", fileName, expectedPuids, fileExtensionMismatch)
+    }
+
+    "The ffid method" should s"return the correct format for a nested directory for $fileName" in {
+      testFFIDExtractResult("ffid_nested_directory_event", fileName, expectedPuids, fileExtensionMismatch)
+    }
+
+    "The ffid method" should s"return the correct format for a file with a backtick for $fileName" in {
+      testFFIDExtractResult("ffid_path_with_backtick_event", fileName, expectedPuids, fileExtensionMismatch)
+    }
+
+    "The ffid method" should s"return the correct format for a file with a space for $fileName" in {
+      testFFIDExtractResult("ffid_path_with_space_event", fileName, expectedPuids, fileExtensionMismatch)
+    }
   }
 
   def ffidFile: FFIDFile = FFIDFile(consignmentId, fileId, "originalPath", userId)
