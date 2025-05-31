@@ -15,7 +15,7 @@ object Dependencies {
   lazy val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5"
   lazy val logback = "ch.qos.logback" % "logback-classic" % "1.5.18"
   lazy val logstashLogbackEncoder = "net.logstash.logback" % "logstash-logback-encoder" % "8.1"
-  lazy val mockito = "org.mockito" %% "mockito-scala" % "1.17.45"
+  lazy val mockito = "org.mockito" %% "mockito-scala" % "2.0.0"
   lazy val wiremock = "com.github.tomakehurst" % "wiremock" % "3.0.1"
   lazy val droidApi = "uk.gov.nationalarchives" % "droid-api" % "6.8.1"
   lazy val apacheCommons = "org.apache.commons" % "commons-lang3" % "3.17.0"
