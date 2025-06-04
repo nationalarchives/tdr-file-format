@@ -6,10 +6,12 @@ import org.scalatest.EitherValues
 import org.scalatest.matchers.should.Matchers._
 import org.scalatest.prop.TableFor3
 import uk.gov.nationalarchives.droid.core.interfaces.IdentificationMethod
-import uk.gov.nationalarchives.droid.internal.api.{ApiResult, DroidAPI}
+import uk.gov.nationalarchives.droid.internal.api.{DroidAPI, HashAlgorithm}
+import uk.gov.nationalarchives.droid.internal.api.DroidAPI.{APIIdentificationResult, APIResult}
 import uk.gov.nationalarchives.fileformat.FFIDExtractor.FFIDFile
 
 import java.net.URI
+import java.util
 import java.util.UUID
 import scala.jdk.CollectionConverters._
 
@@ -20,6 +22,7 @@ class FFIDExtractorTest extends TestUtils with MockitoSugar with EitherValues {
   val consignmentId: UUID = UUID.randomUUID()
   val fileId: UUID = UUID.randomUUID()
   val mockUri: URI = URI.create("/some/uri")
+  val emptyChecksumMap: util.Map[HashAlgorithm, String] = Map.empty[HashAlgorithm, String].asJava
 
   "The ffid method" should "return the correct droid and signature version" in {
     val mockApi = mock[DroidAPI]
@@ -41,7 +44,8 @@ class FFIDExtractorTest extends TestUtils with MockitoSugar with EitherValues {
 
   "The ffid method" should "return the correct value if the extension and puid are empty" in {
     val api = mock[DroidAPI]
-    val mockResult = new ApiResult(null, IdentificationMethod.EXTENSION, null, "testName", false, mockUri)
+    val identificationResult = new APIIdentificationResult(null, IdentificationMethod.EXTENSION, null, "testName", false, mockUri)
+    val mockResult = new APIResult(List(identificationResult).asJava, emptyChecksumMap)
     when(api.submit(any[URI])).thenReturn(List(mockResult).asJava)
 
     val result = new FFIDExtractor(api, bucketName).ffidFile(ffidFile)
@@ -53,7 +57,8 @@ class FFIDExtractorTest extends TestUtils with MockitoSugar with EitherValues {
 
   "the ffid method" should "return a file extension mismatch if one exists" in {
     val api = mock[DroidAPI]
-    val mockResult = new ApiResult(null, IdentificationMethod.EXTENSION, null, "testName", true, mockUri)
+    val apiIdentification = new APIIdentificationResult(null, IdentificationMethod.EXTENSION, null, "testName", true, mockUri)
+    val mockResult = new APIResult(List(apiIdentification).asJava, emptyChecksumMap)
     when(api.submit(any[URI])).thenReturn(List(mockResult).asJava)
 
     val result = new FFIDExtractor(api, bucketName).ffidFile(ffidFile)
@@ -64,7 +69,9 @@ class FFIDExtractorTest extends TestUtils with MockitoSugar with EitherValues {
 
   "the ffid method" should "return a file format name if one exists" in {
     val api = mock[DroidAPI]
-    val mockResult = new ApiResult(null, IdentificationMethod.EXTENSION, null, ".formatName", true, mockUri)
+    val apiIdentification = new APIIdentificationResult(null, IdentificationMethod.EXTENSION, null, ".formatName", true, mockUri)
+    
+    val mockResult = new APIResult(List(apiIdentification).asJava, emptyChecksumMap)
     when(api.submit(any[URI])).thenReturn(List(mockResult).asJava)
 
     val result = new FFIDExtractor(api, bucketName).ffidFile(ffidFile)
@@ -77,7 +84,7 @@ class FFIDExtractorTest extends TestUtils with MockitoSugar with EitherValues {
     val api = mock[DroidAPI]
     val apiResults = for {
       count <- List("1", "2", "3")
-      res <- new ApiResult(s"extension$count", IdentificationMethod.EXTENSION, s"puid$count", s"testName$count", false, mockUri) :: Nil
+      res <- new APIResult(List(new APIIdentificationResult(s"extension$count", IdentificationMethod.EXTENSION, s"puid$count", s"testName$count", false, mockUri)).asJava, emptyChecksumMap) :: Nil
     } yield res
 
     when(api.submit(any[URI], any[String])).thenReturn(apiResults.asJava)
