@@ -4,7 +4,8 @@ import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.Logger
 import graphql.codegen.types.{FFIDMetadataInputMatches, FFIDMetadataInputValues}
 import net.logstash.logback.argument.StructuredArguments.value
-import uk.gov.nationalarchives.droid.internal.api.{ApiResult, DroidAPI}
+import uk.gov.nationalarchives.droid.internal.api.DroidAPI
+import uk.gov.nationalarchives.droid.internal.api.DroidAPI.APIResult
 import uk.gov.nationalarchives.fileformat.FFIDExtractor._
 
 import java.net.URI
@@ -36,12 +37,12 @@ class FFIDExtractor(api: DroidAPI, bucketName: String) {
       val droidVersion = api.getDroidVersion
       val containerSignatureVersion = api.getContainerSignatureVersion
       val droidSignatureVersion = api.getBinarySignatureVersion
-      val results: List[ApiResult] = api.submit(URI.create(s"s3://$s3Bucket/$s3ObjectPrefix"), extension).asScala.toList
+      val results: List[APIResult] = api.submit(URI.create(s"s3://$s3Bucket/$s3ObjectPrefix"), extension).asScala.toList
 
-      val matches = results match {
+      val matches = results.flatMap(_.identificationResults().asScala) match {
         case Nil => List(FFIDMetadataInputMatches(None, "", None, None, None))
         case results => results.map(res => {
-          FFIDMetadataInputMatches(Option(res.getExtension), res.getMethod.getMethod, Option(res.getPuid), Option(res.isFileExtensionMismatch), Option(res.getName))
+          FFIDMetadataInputMatches(Option(res.extension()), res.method().getMethod, Option(res.puid()), Option(res.fileExtensionMismatch()), Option(res.name()))
         })
       }
 

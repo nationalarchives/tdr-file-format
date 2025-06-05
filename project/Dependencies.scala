@@ -16,7 +16,7 @@ object Dependencies {
   lazy val logstashLogbackEncoder = "net.logstash.logback" % "logstash-logback-encoder" % "8.1"
   lazy val mockito = "org.mockito" %% "mockito-scala" % "1.17.45"
   lazy val wiremock = "com.github.tomakehurst" % "wiremock" % "3.0.1"
-  lazy val droidApi = "uk.gov.nationalarchives" % "droid-api" % "6.9.0"
+  lazy val droidApi = "uk.gov.nationalarchives" % "droid-api" % "6.9.3"
   lazy val apacheCommons = "org.apache.commons" % "commons-lang3" % "3.17.0"
   lazy val javaxXml =  "org.glassfish.jaxb" % "jaxb-runtime" % "4.0.5"
   lazy val byteBuddy = "net.bytebuddy" % "byte-buddy" % "1.17.5"
