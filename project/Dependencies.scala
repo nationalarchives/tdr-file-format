@@ -20,5 +20,5 @@ object Dependencies {
   lazy val droidApi = "uk.gov.nationalarchives" % "droid-api" % "6.9.3"
   lazy val apacheCommons = "org.apache.commons" % "commons-lang3" % "3.17.0"
   lazy val javaxXml =  "org.glassfish.jaxb" % "jaxb-runtime" % "4.0.5"
-  lazy val byteBuddy = "net.bytebuddy" % "byte-buddy" % "1.17.5"
+  lazy val byteBuddy = "net.bytebuddy" % "byte-buddy" % "1.17.6"
 }
