@@ -21,18 +21,26 @@ jobs:
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
       - run: pip install requests
       - run: python .github/scripts/check_for_new_version.py
-      - id: check-diff
-        run: git diff --exit-code
-        continue-on-error: true
-      - if: steps.check-diff.outcome != 'success'
+      - name: Check for new version
+        id: check_versions
+        run: |
+          // Check if there are any new files
+          if [ -n "$(git ls-files --others --exclude-standard)" ]; then
+            echo "new-version=true" >> $GITHUB_OUTPUT
+          else
+            echo "No new version of the signature files was found"
+            echo "new-version=false" >> $GITHUB_OUTPUT
+          fi
+      - name: Create PR if there are changes
+        if: steps.check_versions.outputs.new-version == 'true'
         run: |
           git config --global user.email 181243999+tna-da-bot@users.noreply.github.com
-          git config --global user.name tna-da-bot
-          git checkout -b $BRANCH_NAME
-          git add -A 
-          git commit -m "Droid version bump"
-          git push -u origin $BRANCH_NAME
-          gh pr create --title "Droid Version Bump" --body "Bump Droid Version"
+            git config --global user.name tna-da-bot
+            git checkout -b $BRANCH_NAME
+            git add -A 
+            git commit -m "Droid version bump"
+            git push -u origin $BRANCH_NAME
+            gh pr create --title "Droid Version Bump" --body "Bump Droid Version"
         env:
           GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
           BRANCH_NAME: droid-version-bump-${{ github.run_id }}${{ github.run_attempt }}
