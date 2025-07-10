@@ -1,7 +1,10 @@
+import os
 import xml.etree.ElementTree as etree
 import requests
 from datetime import datetime
 
+cdn_url = "https://cdn.nationalarchives.gov.uk/documents"
+main_resources = "src/main/resources"
 
 def get_data():
     envelope = etree.Element('soap:Envelope', attrib={'xmlns:soap': 'http://schemas.xmlsoap.org/soap/envelope/',
@@ -48,7 +51,7 @@ def get_latest_containers_version():
 
 
 def validate_xml(file_name):
-    response = requests.get(f"https://cdn.nationalarchives.gov.uk/documents/{file_name}")
+    response = requests.get(f"{cdn_url}/{file_name}")
     valid_xml = True
     try:
         etree.fromstring(response.text)
@@ -60,13 +63,21 @@ def validate_xml(file_name):
 latest_droid_version = get_latest_droid_version()
 latest_containers_version = get_latest_containers_version()
 
-with open("src/main/resources/application.conf", "r+") as conf:
-    lines = conf.readlines()
-    conf_replaced = ''
-    if validate_xml(f"DROID_SignatureFile_V{latest_droid_version}.xml"):
-        conf_replaced = (replace_line(line, 'droid', latest_droid_version, "\n") for line in lines)
-    if validate_xml(f"container-signature-{latest_containers_version}.xml"):
-        conf_replaced = (replace_line(line, 'containers', latest_containers_version) for line in conf_replaced)
-    if conf_replaced != '':
-        conf.seek(0)
-        conf.write(''.join(list(conf_replaced)))
+
+if validate_xml(f"DROID_SignatureFile_V{latest_droid_version}.xml"):
+    # Download and save droid signature file
+    response = requests.get(f"{cdn_url}/DROID_SignatureFile_V{latest_droid_version}.xml")
+    response.raise_for_status()
+    file_path = os.path.join(main_resources, f"DROID_SignatureFile_V{latest_droid_version}.xml")
+    with open(file_path, "wb") as f:
+        f.write(response.content)
+
+
+if validate_xml(f"container-signature-{latest_containers_version}.xml"):
+    # Download and save container signature file
+    response = requests.get(f"{cdn_url}/container-signature-{latest_containers_version}.xml")
+    response.raise_for_status()
+    file_path = os.path.join(main_resources, f"container-signature-{latest_containers_version}.xml")
+    with open(file_path, "wb") as f:
+        f.write(response.content)
+

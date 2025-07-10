@@ -25,6 +25,10 @@ class FFIDExtractorTest extends TestUtils with MockitoSugar with EitherValues {
   val emptyChecksumMap: util.Map[HashAlgorithm, String] = Map.empty[HashAlgorithm, String].asJava
 
   "The ffid method" should "return the correct droid and signature version" in {
+
+    val ffidExtractor: FFIDExtractor = FFIDExtractor()
+
+    ffidExtractor.ffidFile(FFIDFile(UUID.randomUUID, UUID.randomUUID, "closed_file.pdf", UUID.randomUUID))
     val mockApi = mock[DroidAPI]
     val testDroidVersion = "TEST_DROID_VERSION"
     val testBinarySignatureVersion = "TEST_BINARY_SIGNATURE_VERSION"
