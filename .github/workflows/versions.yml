@@ -24,7 +24,6 @@ jobs:
       - name: Check for new version
         id: check_versions
         run: |
-          // Check if there are any new files
           if [ -n "$(git ls-files --others --exclude-standard)" ]; then
             echo "new-version=true" >> $GITHUB_OUTPUT
           else
