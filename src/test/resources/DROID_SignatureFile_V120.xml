@@ -12895,7 +12895,7 @@
             <ByteSequence Reference="BOFoffset">
                 <SubSequence MinFragLength="0" Position="1"
                     SubSeqMaxOffset="4" SubSeqMinOffset="4">
-                    <Sequence>667479703367</Sequence>
+                    <Sequence>1</Sequence>
                     <DefaultShift>7</DefaultShift>
                     <Shift Byte="33">2</Shift>
                     <Shift Byte="66">6</Shift>
@@ -13857,7 +13857,7 @@
                     <LeftFragment MaxOffset="4" MinOffset="4" Position="2">[01:0C][01:1F]</LeftFragment>
                     <LeftFragment MaxOffset="1" MinOffset="1" Position="3">30</LeftFragment>
                     <RightFragment MaxOffset="20" MinOffset="20" Position="1">5459504510043</RightFragment>
-                    <RightFragment MaxOffset="20" MinOffset="20" Position="2">494410000004E</RightFragment>
+                    <RightFragment MaxOffset="20" MinOffset="20" Position="2">1</RightFragment>
                     <RightFragment MaxOffset="20" MinOffset="20" Position="3">54494D455354414D5000004E</RightFragment>
                 </SubSequence>
             </ByteSequence>
@@ -15292,7 +15292,7 @@
             <ByteSequence Endianness="Big-endian" Reference="BOFoffset">
                 <SubSequence MinFragLength="15" Position="1"
                     SubSeqMaxOffset="80" SubSeqMinOffset="80">
-                    <Sequence>111111110000</Sequence>
+                    <Sequence>1</Sequence>
                     <DefaultShift>51</DefaultShift>
                     <Shift Byte="00">1</Shift>
                     <LeftFragment MaxOffset="1" MinOffset="1" Position="1">435411</LeftFragment>
@@ -15976,7 +15976,7 @@
             <ByteSequence Endianness="Big-endian" Reference="BOFoffset">
                 <SubSequence MinFragLength="462" Position="1"
                     SubSeqMaxOffset="0" SubSeqMinOffset="0">
-                    <Sequence>111111110000</Sequence>
+                    <Sequence>1</Sequence>
                     <DefaultShift>51</DefaultShift>
                     <Shift Byte="00">1</Shift>
                     <LeftFragment MaxOffset="368" MinOffset="368" Position="1">00</LeftFragment>
@@ -25837,7 +25837,7 @@
                     <Shift Byte="53">11</Shift>
                     <RightFragment MaxOffset="4096" MinOffset="0" Position="1">46494C455F534348454D41</RightFragment>
                     <RightFragment MaxOffset="1" MinOffset="0" Position="2">28</RightFragment>
-                    <RightFragment MaxOffset="1" MinOffset="0" Position="3">282749464334</RightFragment>
+                    <RightFragment MaxOffset="1" MinOffset="0" Position="3">1</RightFragment>
                 </SubSequence>
             </ByteSequence>
         </InternalSignature>
