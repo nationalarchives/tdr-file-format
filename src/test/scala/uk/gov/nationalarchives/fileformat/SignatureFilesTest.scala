@@ -1,30 +1,31 @@
 package uk.gov.nationalarchives.fileformat
 
-import org.mockito.ArgumentMatchers.any
-import org.mockito.{ArgumentCaptor, MockitoSugar}
+import org.mockito.MockitoSugar
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers._
-import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor1}
+import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor2}
 
-import java.net.http.HttpResponse.BodyHandler
-import java.net.http.{HttpClient, HttpRequest}
+import java.io.FileNotFoundException
 
 class SignatureFilesTest extends AnyFlatSpec with MockitoSugar with TableDrivenPropertyChecks {
 
-  val signatureTypes: TableFor1[String] = Table(
-    "signatureType",
-    "droid",
-    "container"
+  val signatureTypes: TableFor2[String, String] = Table(
+    ("signatureType", "fileName"),
+    ("droid", "DROID_SignatureFile_V120.xml"),
+    ("container", "container-signature-20240715.xml")
   )
 
-  forAll(signatureTypes) { signatureType =>
-    "downloadSignatureFile" should s"return an error if the API returns an error for the $signatureType signature" in {
-      val client = mock[HttpClient]
-      val versionCaptor: ArgumentCaptor[HttpRequest] = ArgumentCaptor.forClass(classOf[HttpRequest])
-      when(client.send[Any](versionCaptor.capture(), any[BodyHandler[Any]]))
-        .thenThrow(new Exception("An error"))
-      val fileResponse = new SignatureFiles(client, Nil).downloadSignatureFile(signatureType)
-      fileResponse.isFailure should be(true)
+  forAll(signatureTypes) { (signatureType, fileName) =>
+    "findSignatureFile" should s"find and return file path of $signatureType signature" in {
+      val fileResponse = SignatureFiles().findSignatureFile(signatureType)
+      fileResponse.getFileName.toString should be(fileName)
     }
+  }
+
+  "findSignatureFile" should "throw an exception if the given signatureType doesn't exist" in {
+    val ex = intercept[FileNotFoundException] {
+      SignatureFiles().findSignatureFile("xyz")
+    }
+    ex.getMessage should be("Signature file for xyz not found locally.")
   }
 }
