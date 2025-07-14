@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - master
+      - TDRD-859-download-file-during-build
 permissions:
   id-token: write
   contents: write
