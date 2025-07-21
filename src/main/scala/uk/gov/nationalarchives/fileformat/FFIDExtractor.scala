@@ -25,7 +25,7 @@ class FFIDExtractor(api: DroidAPI, bucketName: String) {
     case _ => s"${file.userId}/${file.consignmentId}/${file.fileId}"
   }
 
-  private def fileExtension(filePath: String): String= {
+  private def fileExtension(filePath: String): String = {
     Paths.get(filePath).getFileName.toString.split("\\.").last
   }
 
@@ -75,18 +75,11 @@ object FFIDExtractor {
   private val bucketName = configFactory.getString("s3.bucket")
 
   def apply(): FFIDExtractor = {
-    val api: DroidAPI = (for {
-      containerPath <- signatureFiles.downloadSignatureFile("container")
-      sigPath <- signatureFiles.downloadSignatureFile("droid")
-    } yield DroidAPI.builder()
-      .containerSignature(containerPath)
-      .binarySignature(sigPath)
-      .build()) match {
-      case Failure(exception) =>
-        logger.error("Error getting the droid API", exception)
-        throw new RuntimeException(exception.getMessage)
-      case Success(api) => api
-    }
+    val api: DroidAPI =
+      DroidAPI.builder()
+        .containerSignature(signatureFiles.findSignatureFile("container"))
+        .binarySignature(signatureFiles.findSignatureFile("droid"))
+        .build()
     new FFIDExtractor(api, bucketName)
   }
 }

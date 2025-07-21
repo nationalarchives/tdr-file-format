@@ -18,15 +18,16 @@ The function then calls the Droid API against this file to extract the [PRONOM] 
 ### DROID and file format signatures
 
 Droid is contained within the `"uk.gov.nationalarchives" % "droid-api"` dependency. 
-The binary and container signature files are downloaded when the lambda is first started. To get the signature files, it carries out the following steps. 
-* Checks to see if the `/tmp` directory contains container-* or DROID_Signature*
-* If they exist, use those to create the Droid instance.
-* If they don't exist:
-    * Call http://www.nationalarchives.gov.uk/pronom/container-signature.xml and get the last modified date
-    * Convert this to YYYYMMDD and use that for the container signature version
-    * Call the SOAP endpoint at http://www.nationalarchives.gov.uk/pronom/service.asmx
-    * This returns the latest Droid signature file version.
-    * Download both these files from the TNA CDN as before.
+
+The binary and container signature files are downloaded during the build process ([build.yml](.github%2Fworkflows%2Fbuild.yml)). To build the lambda function with the signature files, it carries out the following steps:
+* Pick the latest version of the DROID binary and container signature files from the [application.conf](src%2Fmain%2Fresources%2Fapplication.conf)
+* Download both the files and put them in the `src/main/resources` folder.
+  ```
+  curl -L "https://cdn.nationalarchives.gov.uk/documents/DROID_SignatureFile_V${DROID_VERSION}.xml" -o "src/main/resources/DROID_SignatureFile_V${DROID_VERSION}.xml"
+  curl -L "https://cdn.nationalarchives.gov.uk/documents/container-signature-${CONTAINERS_VERSION}.xml" -o "src/main/resources/container-signature-${CONTAINERS_VERSION}.xml"
+  ```
+* Build the artifact and deploy it to AWS.
+The lambda function will pick up `container-*` or `DROID_Signature*` files from the resources folder when it starts up. If the files are not present then it will throw an error.
 
 ### File format Lambda
 
