@@ -12,7 +12,7 @@ object Dependencies {
   lazy val s3Utils =  "uk.gov.nationalarchives" %% "s3-utils" % "0.1.278"
   lazy val generatedGraphql =  "uk.gov.nationalarchives" %% "tdr-generated-graphql" % "0.0.431"
   lazy val csvParser = "com.github.tototoshi" %% "scala-csv" % "2.0.0"
-  lazy val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5"
+  lazy val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.9.6"
   lazy val logback = "ch.qos.logback" % "logback-classic" % "1.5.18"
   lazy val logstashLogbackEncoder = "net.logstash.logback" % "logstash-logback-encoder" % "8.1"
   lazy val mockito = "org.mockito" %% "mockito-scala" % "2.0.0"
