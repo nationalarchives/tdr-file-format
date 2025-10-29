@@ -39,6 +39,7 @@ lazy val root = (project in file("."))
 
 (assembly / assemblyMergeStrategy) := {
   case PathList("META-INF", "MANIFEST.MF") => MergeStrategy.discard
+  case fileName if fileName matches(".*container-signature-20[0-9]{6}\\.xml") => MergeStrategy.discard
   case _ => MergeStrategy.first
 }
 
