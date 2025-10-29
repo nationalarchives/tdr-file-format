@@ -39,14 +39,6 @@ def replace_line(line, property_type, new_version, suffix=""):
         return line
 
 
-def get_latest_containers_version():
-    res = requests.get("https://www.nationalarchives.gov.uk/pronom/container-signature.xml")
-    last_modified_string = res.headers.get("Last-Modified")
-    date = datetime.strptime(last_modified_string, '%a, %d %b %Y %H:%M:%S GMT')
-
-    return datetime.strftime(date, '%Y%m%d')
-
-
 def validate_xml(file_name):
     response = requests.get(f"https://cdn.nationalarchives.gov.uk/documents/{file_name}")
     valid_xml = True
@@ -58,15 +50,13 @@ def validate_xml(file_name):
 
 
 latest_droid_version = get_latest_droid_version()
-latest_containers_version = get_latest_containers_version()
+
 
 with open("src/main/resources/application.conf", "r+") as conf:
     lines = conf.readlines()
     conf_replaced = ''
     if validate_xml(f"DROID_SignatureFile_V{latest_droid_version}.xml"):
         conf_replaced = (replace_line(line, 'droid', latest_droid_version, "\n") for line in lines)
-    if validate_xml(f"container-signature-{latest_containers_version}.xml"):
-        conf_replaced = (replace_line(line, 'containers', latest_containers_version) for line in conf_replaced)
     if conf_replaced != '':
         conf.seek(0)
         conf.write(''.join(list(conf_replaced)))
