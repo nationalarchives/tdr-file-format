@@ -6,7 +6,7 @@ The file format checks run in AWS Lambda. They run the [DROID] file format tool 
 
 The Lambda function downloads the file passed as input to the lambda local file system. 
 
-The function then calls the Droid API against this file to extract the [PRONOM] ids 
+The function then calls the Droid API against this file to extract the [PRONOM] ids. 
 
 [Transfer Digital Records]: https://github.com/nationalarchives/tdr-dev-documentation/
 [DROID]: https://www.nationalarchives.gov.uk/information-management/manage-information/preserving-digital-records/droid/
