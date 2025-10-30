@@ -38,6 +38,16 @@ lazy val root = (project in file("."))
 (Test / envVars) := Map("AWS_ACCESS_KEY_ID" -> "accesskey", "AWS_SECRET_ACCESS_KEY" -> "secret")
 
 (assembly / assemblyMergeStrategy) := {
+  //Exclude DROID build transitory dependency signature file
+  case filePath if filePath matches(".*container-signature-20[0-9]{6}\\.xml") =>
+    CustomMergeStrategy("PreferLocalSignatureOverDependency") { allSignaturesMatchingThePattern =>
+      allSignaturesMatchingThePattern.find(_.isProjectDependency) match {
+        case Some(selectedSignature) =>
+          Right(Vector(Assembly.JarEntry(filePath, selectedSignature.stream)))
+        case None =>
+          Right(Vector())
+      }
+    }
   case PathList("META-INF", "MANIFEST.MF") => MergeStrategy.discard
   case _ => MergeStrategy.first
 }

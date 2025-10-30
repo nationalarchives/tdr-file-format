@@ -16,9 +16,11 @@ jobs:
       java-version: '21'
       build-command: |
         DROID_VERSION=$(grep 'droid.version' src/main/resources/application.conf | head -1 | sed 's/.*= *"\(.*\)"/\1/')
+        DROID_DOWNLOAD_NAME=$(grep 'droid.signature.name' src/main/resources/application.conf | head -1 | sed 's/.*= *"\(.*\)"/\1/')
         CONTAINERS_VERSION=$(grep 'containers.version' src/main/resources/application.conf | head -1 | sed 's/.*= *"\(.*\)"/\1/')
-        curl -L "https://cdn.nationalarchives.gov.uk/documents/DROID_SignatureFile_V${DROID_VERSION}.xml" -o "src/main/resources/DROID_SignatureFile_V${DROID_VERSION}.xml"
-        curl -L "https://cdn.nationalarchives.gov.uk/documents/container-signature-${CONTAINERS_VERSION}.xml" -o "src/main/resources/container-signature-${CONTAINERS_VERSION}.xml"
+        CONTAINERS_DOWNLOAD_NAME=$(grep 'containers.signature.name' src/main/resources/application.conf | head -1 | sed 's/.*= *"\(.*\)"/\1/')
+        curl -L "https://cdn.nationalarchives.gov.uk/documents/${DROID_DOWNLOAD_NAME}${DROID_VERSION}.xml" -o "src/main/resources/${DROID_DOWNLOAD_NAME}${DROID_VERSION}.xml"
+        curl -L "https://cdn.nationalarchives.gov.uk/documents/${CONTAINERS_DOWNLOAD_NAME}${CONTAINERS_VERSION}.xml" -o "src/main/resources/${CONTAINERS_DOWNLOAD_NAME}${CONTAINERS_VERSION}.xml"
         sbt assembly
     secrets:
       MANAGEMENT_ACCOUNT: ${{ secrets.MANAGEMENT_ACCOUNT }}

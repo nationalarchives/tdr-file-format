@@ -1,18 +1,24 @@
 package uk.gov.nationalarchives.fileformat
 
+import com.typesafe.config.{Config, ConfigFactory}
 import org.mockito.MockitoSugar
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers._
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor2}
-
-import java.io.FileNotFoundException
+import uk.gov.nationalarchives.fileformat.SignatureFiles.SignatureFileType
+import uk.gov.nationalarchives.fileformat.SignatureFiles.SignatureFileType.{ContainerSignature, DroidSignature, SignatureFileType}
 
 class SignatureFilesTest extends AnyFlatSpec with MockitoSugar with TableDrivenPropertyChecks {
+  private val configFactory: Config = ConfigFactory.load
+  private val containerSignatureName = configFactory.getString("containers.signature.name")
+  private val containerSignatureVersion = configFactory.getString("containers.version")
+  private val droidSignatureName = configFactory.getString("droid.signature.name")
+  private val droidSignatureVersion = configFactory.getString("droid.version")
 
-  val signatureTypes: TableFor2[String, String] = Table(
+  val signatureTypes: TableFor2[SignatureFileType, String] = Table(
     ("signatureType", "fileName"),
-    ("droid", "DROID_SignatureFile_V120.xml"),
-    ("container", "container-signature-20240715.xml")
+    (DroidSignature, droidSignatureName + droidSignatureVersion + ".xml"),
+    (ContainerSignature, containerSignatureName + containerSignatureVersion + ".xml")
   )
 
   forAll(signatureTypes) { (signatureType, fileName) =>
@@ -22,10 +28,11 @@ class SignatureFilesTest extends AnyFlatSpec with MockitoSugar with TableDrivenP
     }
   }
 
-  "findSignatureFile" should "throw an exception if the given signatureType doesn't exist" in {
-    val ex = intercept[FileNotFoundException] {
-      SignatureFiles().findSignatureFile("xyz")
-    }
-    ex.getMessage should be("Signature file for xyz not found locally.")
+  "SignatureFileType" should "contain the correct values from the application config" in {
+
+
+    SignatureFileType.values.size should be(2)
+    SignatureFileType.ContainerSignature.toString should equal(containerSignatureName + containerSignatureVersion)
+    SignatureFileType.DroidSignature.toString should equal(droidSignatureName + droidSignatureVersion)
   }
 }
