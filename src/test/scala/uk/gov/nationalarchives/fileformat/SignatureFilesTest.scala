@@ -29,8 +29,6 @@ class SignatureFilesTest extends AnyFlatSpec with MockitoSugar with TableDrivenP
   }
 
   "SignatureFileType" should "contain the correct values from the application config" in {
-
-
     SignatureFileType.values.size should be(2)
     SignatureFileType.ContainerSignature.toString should equal(containerSignatureName + containerSignatureVersion)
     SignatureFileType.DroidSignature.toString should equal(droidSignatureName + droidSignatureVersion)
