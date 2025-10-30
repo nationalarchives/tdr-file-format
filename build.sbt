@@ -1,4 +1,5 @@
-import Dependencies._
+import Dependencies.*
+import sbtassembly.MergeStrategy
 
 ThisBuild / scalaVersion := "2.13.16"
 ThisBuild / version := "0.1.2"
@@ -38,8 +39,16 @@ lazy val root = (project in file("."))
 (Test / envVars) := Map("AWS_ACCESS_KEY_ID" -> "accesskey", "AWS_SECRET_ACCESS_KEY" -> "secret")
 
 (assembly / assemblyMergeStrategy) := {
+  case filePath if filePath matches(".*container-signature-20[0-9]{6}\\.xml") =>
+    CustomMergeStrategy("PreferLocalSignatureOverDependency") { allSignaturesMatchingThePattern =>
+      allSignaturesMatchingThePattern.find(_.isProjectDependency) match {
+        case Some(selectedSignature) =>
+          Right(Vector(Assembly.JarEntry(filePath, selectedSignature.stream)))
+        case None =>
+          Right(Vector())
+      }
+    }
   case PathList("META-INF", "MANIFEST.MF") => MergeStrategy.discard
-  case fileName if fileName matches(".*container-signature-20[0-9]{6}\\.xml") => MergeStrategy.discard
   case _ => MergeStrategy.first
 }
 
