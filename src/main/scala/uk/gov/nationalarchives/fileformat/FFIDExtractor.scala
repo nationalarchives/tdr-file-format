@@ -7,6 +7,7 @@ import net.logstash.logback.argument.StructuredArguments.value
 import uk.gov.nationalarchives.droid.internal.api.DroidAPI
 import uk.gov.nationalarchives.droid.internal.api.DroidAPI.APIResult
 import uk.gov.nationalarchives.fileformat.FFIDExtractor._
+import uk.gov.nationalarchives.fileformat.SignatureFiles.SignatureFileType.{ContainerSignature, DroidSignature}
 
 import java.net.URI
 import java.nio.file.Paths
@@ -77,8 +78,8 @@ object FFIDExtractor {
   def apply(): FFIDExtractor = {
     val api: DroidAPI =
       DroidAPI.builder()
-        .containerSignature(signatureFiles.findSignatureFile("container"))
-        .binarySignature(signatureFiles.findSignatureFile("droid"))
+        .containerSignature(signatureFiles.findSignatureFile(ContainerSignature))
+        .binarySignature(signatureFiles.findSignatureFile(DroidSignature))
         .build()
     new FFIDExtractor(api, bucketName)
   }

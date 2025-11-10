@@ -8,7 +8,7 @@ permissions:
   contents: write
 jobs:
   pre-deploy:
-    uses: nationalarchives/tdr-github-actions/.github/workflows/lambda_build.yml@main
+    uses: nationalarchives/tdr-github-actions/.github/workflows/lambda_build.yml@5d4fee21ed08f053613a7706e28623c0adc0f5f4 # v0.0.10
     with:
       lambda-name: file-format-v2
       repo-name: tdr-file-format
@@ -16,9 +16,11 @@ jobs:
       java-version: '21'
       build-command: |
         DROID_VERSION=$(grep 'droid.version' src/main/resources/application.conf | head -1 | sed 's/.*= *"\(.*\)"/\1/')
+        DROID_DOWNLOAD_NAME=$(grep 'droid.signature.name' src/main/resources/application.conf | head -1 | sed 's/.*= *"\(.*\)"/\1/')
         CONTAINERS_VERSION=$(grep 'containers.version' src/main/resources/application.conf | head -1 | sed 's/.*= *"\(.*\)"/\1/')
-        curl -L "https://cdn.nationalarchives.gov.uk/documents/DROID_SignatureFile_V${DROID_VERSION}.xml" -o "src/main/resources/DROID_SignatureFile_V${DROID_VERSION}.xml"
-        curl -L "https://cdn.nationalarchives.gov.uk/documents/container-signature-${CONTAINERS_VERSION}.xml" -o "src/main/resources/container-signature-${CONTAINERS_VERSION}.xml"
+        CONTAINERS_DOWNLOAD_NAME=$(grep 'containers.signature.name' src/main/resources/application.conf | head -1 | sed 's/.*= *"\(.*\)"/\1/')
+        curl -L "https://cdn.nationalarchives.gov.uk/documents/${DROID_DOWNLOAD_NAME}${DROID_VERSION}.xml" -o "src/main/resources/${DROID_DOWNLOAD_NAME}${DROID_VERSION}.xml"
+        curl -L "https://cdn.nationalarchives.gov.uk/documents/${CONTAINERS_DOWNLOAD_NAME}${CONTAINERS_VERSION}.xml" -o "src/main/resources/${CONTAINERS_DOWNLOAD_NAME}${CONTAINERS_VERSION}.xml"
         sbt assembly
     secrets:
       MANAGEMENT_ACCOUNT: ${{ secrets.MANAGEMENT_ACCOUNT }}
@@ -27,7 +29,7 @@ jobs:
     needs: pre-deploy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       - run: gh workflow run deploy.yml -f environment=intg -f to-deploy=${{ needs.pre-deploy.outputs.next-version }}
         env:
           GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
