@@ -10,10 +10,10 @@ object Dependencies {
   lazy val circeGeneric = "io.circe" %% "circe-generic" % circeVersion
   lazy val circeParser = "io.circe" %% "circe-parser" % circeVersion
   lazy val s3Utils =  "uk.gov.nationalarchives" %% "s3-utils" % "0.1.313"
-  lazy val generatedGraphql =  "uk.gov.nationalarchives" %% "tdr-generated-graphql" % "0.0.449"
+  lazy val generatedGraphql =  "uk.gov.nationalarchives" %% "tdr-generated-graphql" % "0.0.450"
   lazy val csvParser = "com.github.tototoshi" %% "scala-csv" % "2.0.0"
   lazy val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.9.6"
-  lazy val logback = "ch.qos.logback" % "logback-classic" % "1.5.27"
+  lazy val logback = "ch.qos.logback" % "logback-classic" % "1.5.28"
   lazy val logstashLogbackEncoder = "net.logstash.logback" % "logstash-logback-encoder" % "9.0"
   lazy val mockito = "org.mockito" %% "mockito-scala" % "2.0.0"
   lazy val wiremock = "com.github.tomakehurst" % "wiremock" % "3.0.1"
