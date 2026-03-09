@@ -10,7 +10,7 @@ permissions:
   contents: write
 jobs:
   test:
-    uses: nationalarchives/tdr-github-actions/.github/workflows/tdr_test.yml@b6ba669dcee7fd4ac089c2e9fb234c48ddd93ab5 # v0.0.15
+    uses: nationalarchives/tdr-github-actions/.github/workflows/tdr_test.yml@c0b42964f83e17530bde64ce2c987a4c355f7fe7 # v0.0.19
     with:
       repo-name: tdr-file-format
       java-version: '21'
