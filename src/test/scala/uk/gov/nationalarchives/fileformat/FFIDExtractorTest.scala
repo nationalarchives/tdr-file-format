@@ -13,6 +13,7 @@ import uk.gov.nationalarchives.fileformat.FFIDExtractor.FFIDFile
 import java.net.URI
 import java.util
 import java.util.UUID
+import scala.concurrent.duration._
 import scala.jdk.CollectionConverters._
 
 //noinspection ScalaDeprecation
@@ -101,6 +102,34 @@ class FFIDExtractorTest extends TestUtils with MockitoSugar with EitherValues {
     val result = new FFIDExtractor(api, bucketName).ffidFile(file)
     result.left.value.getMessage should equal(s"Error processing file id ${file.fileId} with original path originalPath")
     result.left.value.getCause.getMessage should equal("Droid error processing files")
+  }
+
+  "The ffid method" should "return an empty result if the extraction times out" in {
+    val api = mock[DroidAPI]
+    when(api.getDroidVersion).thenAnswer { (_: org.mockito.invocation.InvocationOnMock) =>
+      Thread.sleep(5000)
+      "TEST_DROID_VERSION"
+    }
+    when(api.submit(any[URI], any[String])).thenReturn(List.empty[DroidAPI.APIResult].asJava)
+
+    val file = ffidFile
+    val shortTimeout = 500.millis
+    val result = new FFIDExtractor(api, bucketName, shortTimeout).ffidFile(file)
+
+    val ffid = result.right.value
+    ffid.fileId should equal(file.fileId)
+    ffid.software should equal("Droid")
+    ffid.softwareVersion should equal("")
+    ffid.binarySignatureFileVersion should equal("")
+    ffid.containerSignatureFileVersion should equal("")
+    ffid.method should equal("pronom")
+    ffid.matches.size should equal(1)
+    val m = ffid.matches.head
+    m.extension should be(None)
+    m.identificationBasis should equal("")
+    m.puid should be(None)
+    m.fileExtensionMismatch should be(None)
+    m.formatName should be(None)
   }
 
   "The ffid method" should "return a correct value if there are quotes in the filename" in {
