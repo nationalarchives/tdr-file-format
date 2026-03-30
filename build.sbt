@@ -25,6 +25,7 @@ lazy val root = (project in file("."))
       logstashLogbackEncoder,
       droidApi,
       javaxXml,
+      catsEffect,
       apacheCommons % Test,
       scalaTest % Test,
       mockito % Test,
