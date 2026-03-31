@@ -10,7 +10,7 @@ object Dependencies {
   lazy val circeGeneric = "io.circe" %% "circe-generic" % circeVersion
   lazy val circeParser = "io.circe" %% "circe-parser" % circeVersion
   lazy val s3Utils =  "uk.gov.nationalarchives" %% "s3-utils" % "0.1.313"
-  lazy val generatedGraphql =  "uk.gov.nationalarchives" %% "tdr-generated-graphql" % "0.0.464"
+  lazy val generatedGraphql =  "uk.gov.nationalarchives" %% "tdr-generated-graphql" % "0.0.466"
   lazy val csvParser = "com.github.tototoshi" %% "scala-csv" % "2.0.0"
   lazy val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.9.6"
   lazy val logback = "ch.qos.logback" % "logback-classic" % "1.5.32"
@@ -21,5 +21,5 @@ object Dependencies {
   lazy val apacheCommons = "org.apache.commons" % "commons-lang3" % "3.20.0"
   lazy val javaxXml =  "org.glassfish.jaxb" % "jaxb-runtime" % "4.0.6"
   lazy val byteBuddy = "net.bytebuddy" % "byte-buddy" % "1.18.7"
-  lazy val catsEffect = "org.typelevel" %% "cats-effect" % "3.5.7"
+  lazy val catsEffect = "org.typelevel" %% "cats-effect" % "3.7.0"
 }
