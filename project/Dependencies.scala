@@ -21,5 +21,5 @@ object Dependencies {
   lazy val apacheCommons = "org.apache.commons" % "commons-lang3" % "3.20.0"
   lazy val javaxXml =  "org.glassfish.jaxb" % "jaxb-runtime" % "4.0.6"
   lazy val byteBuddy = "net.bytebuddy" % "byte-buddy" % "1.18.7"
-  lazy val catsEffect = "org.typelevel" %% "cats-effect" % "3.5.7"
+  lazy val catsEffect = "org.typelevel" %% "cats-effect" % "3.7.0"
 }
