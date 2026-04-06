@@ -21,7 +21,7 @@ permissions:
   contents: write
 jobs:
   deploy:
-    uses: nationalarchives/tdr-github-actions/.github/workflows/lambda_deploy.yml@4cce7fa069b9dbecddbdacd9350f66adc50ac815 # v0.0.22
+    uses: nationalarchives/tdr-github-actions/.github/workflows/lambda_deploy.yml@683912c0ebb8d5d6edd15a222677395e95d12ce0 # v0.0.24
     with:
       lambda-name: file-format-v2
       deployment-package: file-format.jar
