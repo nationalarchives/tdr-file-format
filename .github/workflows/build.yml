@@ -3,12 +3,13 @@ on:
   push:
     branches:
       - master
-permissions:
-  id-token: write
-  contents: write
+permissions: {}
 jobs:
   pre-deploy:
-    uses: nationalarchives/tdr-github-actions/.github/workflows/lambda_build.yml@683912c0ebb8d5d6edd15a222677395e95d12ce0 # v0.0.24
+    permissions:
+      id-token: write
+      contents: write
+    uses: nationalarchives/tdr-github-actions/.github/workflows/lambda_build.yml@27efbc03aaaa9696eea85ab7a9363d6f92733471 # v.0.0.34
     with:
       lambda-name: file-format-v2
       repo-name: tdr-file-format
@@ -27,9 +28,14 @@ jobs:
       WORKFLOW_PAT: ${{ secrets.WORKFLOW_PAT }}
   deploy:
     needs: pre-deploy
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - run: gh workflow run deploy.yml -f environment=intg -f to-deploy=${{ needs.pre-deploy.outputs.next-version }}
+        with:
+          persist-credentials: false
+      - run: gh workflow run deploy.yml -f environment=intg -f to-deploy=$NEXT_VERSION
         env:
           GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
+          NEXT_VERSION: ${{ needs.pre-deploy.outputs.next-version }}

@@ -5,12 +5,13 @@ on:
     branches-ignore:
       - master
       - release-*
-permissions:
-  id-token: write
-  contents: write
+permissions: {}
 jobs:
   test:
-    uses: nationalarchives/tdr-github-actions/.github/workflows/tdr_test.yml@683912c0ebb8d5d6edd15a222677395e95d12ce0 # v0.0.24
+    permissions:
+      id-token: write
+      contents: write
+    uses: nationalarchives/tdr-github-actions/.github/workflows/tdr_test.yml@27efbc03aaaa9696eea85ab7a9363d6f92733471 # v.0.0.34
     with:
       repo-name: tdr-file-format
       java-version: '21'
