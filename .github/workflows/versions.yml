@@ -3,14 +3,17 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '30 4 * * 1'
-permissions:
-  id-token: write
-  contents: write
+permissions: {}
 jobs:
   check-versions:
+    permissions:
+      id-token: write
+      contents: write
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
       - name: Import GPG key
         id: import_gpg
         uses: crazy-max/ghaction-import-gpg@2dc316deee8e90f13e1a351ab510b4d5bc0c82cd # v7.0.0
@@ -28,6 +31,7 @@ jobs:
         run: |
           git config --global user.email 181243999+tna-da-bot@users.noreply.github.com
           git config --global user.name tna-da-bot
+          git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}
           git checkout -b $BRANCH_NAME
           git add -A 
           git commit -m "Droid version bump"
